@@ -1,0 +1,42 @@
+slack:
+  strict_scopes: true
+  team:
+    name: Test Workspace
+    domain: test-workspace
+  users:
+    - name: developer
+      real_name: Developer
+      email: dev@example.com
+      is_admin: true
+      presence: active
+  channels:
+    - name: engineering
+      topic: Engineering discussion
+  oauth_apps:
+    - client_id: "12345.67890"
+      client_secret: example_client_secret
+      app_id: A000000001
+      name: Agent Slack Test App
+      redirect_uris:
+        - http://localhost:3000/oauth/slack/callback
+      scopes:
+        - chat:write
+        - channels:read
+        - channels:history
+        - users:read
+        - files:read
+        - reactions:read
+        - pins:read
+        - bookmarks:read
+  tokens:
+    - token: xoxb-local-test
+      user: developer
+      scopes:
+        - chat:write
+        - channels:read
+        - channels:history
+        - users:read
+        - files:read
+        - reactions:read
+        - pins:read
+        - bookmarks:read

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slack CLI"
+  short_description: "Use agent-slack to retrieve Slack context"
+  default_prompt: "Use $agent-slack to retrieve Slack channel or thread context with the agent-slack CLI."
