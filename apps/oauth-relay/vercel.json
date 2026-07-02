@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/oauth/slack/callback",
       "destination": "/api/oauth/slack/callback"
     }
