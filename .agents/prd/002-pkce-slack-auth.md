@@ -1,10 +1,10 @@
 # PKCE Slack Auth
 
-> A user installs Agent Slack, asks an agent to connect Slack, approves access in the browser, and starts using Slack context without creating a Slack app.
+> A user installs Agent Slack, asks an agent to connect Slack, approves access in the browser, and starts using Slack context.
 
 ## Problem
 
-Normal users should not create Slack apps, copy client secrets, or understand OAuth internals. Agent Slack needs a browser login that works like a desktop CLI.
+Agent Slack needs a browser login that works like a desktop CLI: install, approve in Slack, and start reading allowed workspace context.
 
 ## Flow
 
@@ -24,7 +24,7 @@ agent-slack auth status --json
 agent-slack conversation history C123 --limit 50 --json
 ```
 
-Normal users do not provide `SLACK_CLIENT_ID` or `SLACK_CLIENT_SECRET`. The CLI includes the Agent Slack public Client ID. Local development may override it with `AGENT_SLACK_CLIENT_ID` or `--client-id`.
+The CLI includes the Agent Slack public Client ID. Local development may override it with `AGENT_SLACK_CLIENT_ID` or `--client-id`.
 
 ## Fallbacks
 

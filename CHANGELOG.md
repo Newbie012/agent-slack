@@ -1,5 +1,11 @@
 # @eliya-oss/agent-slack
 
+## 0.1.8
+
+### Patch Changes
+
+- Keep README auth onboarding focused on browser login and clean up auth help copy.
+
 ## 0.1.7
 
 ### Patch Changes

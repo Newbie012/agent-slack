@@ -24,9 +24,9 @@ Browser login:
 agent-slack auth login
 ```
 
-Agent Slack opens Slack in the browser with PKCE and stores a local Slack profile. Users should not create a Slack app or handle `client-id`/`client-secret`.
+Agent Slack opens Slack in the browser and stores a local Slack profile.
 
-Token setup:
+Headless setup with an existing bot token:
 
 ```bash
 agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes channels:read,channels:history,users:read --json
@@ -34,7 +34,7 @@ agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes channels:read,channel
 
 This stores an existing Slack bot token as a local profile.
 
-Developer/self-hosted fallback:
+Development and self-hosted OAuth:
 
 1. Create or open a Slack app at https://api.slack.com/apps.
 2. Go to **OAuth & Permissions**, add the needed bot scopes, install the app to the workspace, and copy the bot token.
@@ -44,7 +44,7 @@ Developer/self-hosted fallback:
 agent-slack auth login --oauth --client-id "$SLACK_CLIENT_ID" --client-secret "$SLACK_CLIENT_SECRET" --json
 ```
 
-Treat Slack app creation and client credentials as an advanced developer fallback only.
+Use Slack app credentials only when the user explicitly asks for development or self-hosted OAuth setup.
 
 ## Common Commands
 

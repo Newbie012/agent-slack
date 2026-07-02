@@ -23,28 +23,11 @@ agent-slack api call conversations.info --payload '{"channel":"C123"}' --json
 
 ## Auth
 
-Browser login:
-
 ```bash
 agent-slack auth login
 ```
 
-Agent Slack opens Slack in the browser with PKCE and stores a local Slack profile. Users do not create Slack apps or handle Slack client secrets.
-
-Token setup:
-
-```bash
-agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes channels:read,channels:history,users:read
-```
-
-Developer/self-hosted fallback:
-
-1. Create a Slack app at <https://api.slack.com/apps>.
-2. Add the needed scopes under **OAuth & Permissions**.
-3. Install it to your workspace and copy the bot token.
-4. Run `agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes ...`.
-
-OAuth with `--client-id` and `--client-secret` is only for development and self-hosted setups.
+Opens Slack in your browser and stores a local profile for future commands.
 
 ## Skill
 

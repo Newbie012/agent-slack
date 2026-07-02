@@ -52,8 +52,8 @@ Auth behavior:
 
 - Primary setup: `agent-slack auth login` uses the bundled Agent Slack public Client ID, opens Slack in the browser with PKCE, and stores a local Slack profile.
 - Users can also provide an existing Slack bot token with `--token`.
-- A normal user should not create a Slack app or provide client credentials.
-- Developer fallback: OAuth mode can use Slack app credentials. The **Client ID** and **Client Secret** come from the Slack app's **Basic Information > App Credentials** section.
+- Browser login uses Agent Slack's public Slack app.
+- Development and self-hosted OAuth can use Slack app credentials. The **Client ID** and **Client Secret** come from the Slack app's **Basic Information > App Credentials** section.
 - OAuth opens the Slack OAuth URL in the default browser by default. Use `--no-open` to print the URL only, or `--auth-url-out PATH` for headless agents.
 - PKCE uses `user_scope=...`; OAuth with app credentials uses `scope=...` for bot scopes.
 - Default local callback: `http://localhost:45454/oauth/slack/callback`.
