@@ -55,7 +55,7 @@ Auth behavior:
 - Browser login uses Agent Slack's public Slack app.
 - Development and self-hosted OAuth can use Slack app credentials. The **Client ID** and **Client Secret** come from the Slack app's **Basic Information > App Credentials** section.
 - OAuth opens the Slack OAuth URL in the default browser by default. Use `--no-open` to print the URL only, or `--auth-url-out PATH` for headless agents.
-- Distributed Slack apps use an HTTPS relay redirect URI. The relay forwards Slack's `code` and `state` to the local callback.
+- Distributed Slack apps use `https://aslk.vercel.app/oauth/slack/callback` as the HTTPS relay redirect URI. The relay forwards Slack's `code` and `state` to the local callback.
 - PKCE uses `user_scope=...`; OAuth with app credentials uses `scope=...` for bot scopes.
 - Default local callback: `http://localhost:45454/oauth/slack/callback`.
 - Stores profiles outside the project directory. The default store is `~/.config/agent-slack/profiles.json`; set `AGENT_SLACK_TOKEN_STORE=keychain` on macOS to keep token secrets in Keychain and only profile metadata on disk.

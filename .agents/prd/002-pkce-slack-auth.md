@@ -40,7 +40,7 @@ Token setup supports bot-token workflows. OAuth with app credentials is for deve
 
 - Browser login uses PKCE with `code_challenge_method=S256`.
 - Browser login requests user scopes, not bot scopes.
-- Distributed browser login uses a public HTTPS redirect URI.
+- Distributed browser login uses `https://aslk.vercel.app/oauth/slack/callback` as the public HTTPS redirect URI.
 - Default local callback is `http://localhost:45454/oauth/slack/callback`.
 - No client secret is embedded in the CLI.
 - Tokens are never printed to stdout or stderr.

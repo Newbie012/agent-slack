@@ -13,10 +13,10 @@ http://localhost:45454/oauth/slack/callback
 Deploy this folder as a Vercel project, then add the deployed URL to Slack:
 
 ```text
-https://your-vercel-app.vercel.app/oauth/slack/callback
+https://aslk.vercel.app/oauth/slack/callback
 ```
 
-For local CLI testing before the package has a baked-in public URL:
+For local CLI testing with another relay URL:
 
 ```bash
 AGENT_SLACK_OAUTH_REDIRECT_URI=https://your-vercel-app.vercel.app/oauth/slack/callback aslk auth login

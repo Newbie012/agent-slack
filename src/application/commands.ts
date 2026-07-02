@@ -246,13 +246,16 @@ const authCommand = async (parsed: ParsedArgs, services: CliServices): Promise<D
     const scopes = splitCsv(flagString(parsed, "scopes"))
     const userScopes = splitCsv(flagString(parsed, "user-scopes"))
     const pkceUserScopes = userScopes.length > 0 ? userScopes : scopes.length > 0 ? scopes : defaultPkceUserScopes
+    const redirectUri = flagString(parsed, "redirect-uri") ?? (
+      !byoOAuth && clientId === defaultPkceClientId ? defaultPkceRedirectUri : undefined
+    )
     const profile = await services.oauthFlow.login({
       profileName,
       clientId,
       ...(byoOAuth ? { clientSecret } : { pkce: true }),
       scopes: byoOAuth ? (scopes.length === 0 ? defaultOAuthScopes : scopes) : [],
       userScopes: byoOAuth ? userScopes : pkceUserScopes,
-      redirectUri: flagString(parsed, "redirect-uri"),
+      redirectUri,
       authUrlOut: flagString(parsed, "auth-url-out"),
       timeoutMs: numberFlag(parsed, "timeout-ms"),
       openBrowser: !flagBoolean(parsed, "no-open")
@@ -282,6 +285,7 @@ const defaultOAuthScopes = [
 
 const defaultPkceUserScopes = defaultOAuthScopes
 const defaultPkceClientId = "11499810382723.11506074725874"
+const defaultPkceRedirectUri = "https://aslk.vercel.app/oauth/slack/callback"
 
 const apiCall = async (parsed: ParsedArgs, services: CliServices): Promise<DispatchResult> => {
   const method = requirePositional(parsed.positionals, 2, "METHOD")

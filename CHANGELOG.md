@@ -1,5 +1,11 @@
 # @eliya-oss/agent-slack
 
+## 0.1.10
+
+### Patch Changes
+
+- Use the hosted Agent Slack OAuth relay for default browser login.
+
 ## 0.1.9
 
 ### Patch Changes
