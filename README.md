@@ -5,9 +5,7 @@
 Slack context for AI agents, exposed through the `agent-slack` CLI.
 Short alias: `aslk`.
 
-```bash
-npm install -g @eliya-oss/agent-slack
-```
+<pre align="center">npm install -g @eliya-oss/agent-slack</pre>
 
 <img src="./assets/terminal.webp" alt="Agent Slack terminal screenshot" width="820">
 
