@@ -11,6 +11,8 @@ import type { OAuthFlow, OAuthLoginRequest } from "../../ports/OAuthFlow.js"
 interface OAuthFlowOptions {
   readonly authorizeUrl: string
   readonly tokenUrl: string
+  readonly defaultSlackRedirectUri?: string
+  readonly defaultLocalCallbackUri?: string
   readonly defaultRedirectHost?: string
   readonly defaultRedirectPort?: number
   readonly defaultRedirectPath?: string
@@ -45,10 +47,14 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
     const redirectHost = env.AGENT_SLACK_OAUTH_REDIRECT_HOST ?? env.SLK_OAUTH_REDIRECT_HOST
     const redirectPort = env.AGENT_SLACK_OAUTH_REDIRECT_PORT ?? env.SLK_OAUTH_REDIRECT_PORT
     const redirectPath = env.AGENT_SLACK_OAUTH_REDIRECT_PATH ?? env.SLK_OAUTH_REDIRECT_PATH
+    const slackRedirectUri = env.AGENT_SLACK_OAUTH_REDIRECT_URI ?? env.AGENT_SLACK_OAUTH_PUBLIC_REDIRECT_URI
+    const localCallbackUri = env.AGENT_SLACK_OAUTH_LOCAL_CALLBACK_URI
     const timeoutMs = env.AGENT_SLACK_OAUTH_TIMEOUT_MS ?? env.SLK_OAUTH_TIMEOUT_MS
     return new NodeLocalhostOAuthFlow({
       authorizeUrl: env.AGENT_SLACK_OAUTH_AUTHORIZE_URL ?? env.SLK_SLACK_OAUTH_AUTHORIZE_URL ?? (emulatorBaseUrl === undefined ? "https://slack.com/oauth/v2/authorize" : `${emulatorBaseUrl}/oauth/v2/authorize`),
       tokenUrl: env.AGENT_SLACK_OAUTH_ACCESS_URL ?? env.SLK_SLACK_OAUTH_ACCESS_URL ?? (apiBaseUrl === undefined ? "https://slack.com/api/oauth.v2.access" : `${apiBaseUrl.replace(/\/?$/, "/")}oauth.v2.access`),
+      ...(slackRedirectUri === undefined ? {} : { defaultSlackRedirectUri: slackRedirectUri }),
+      ...(localCallbackUri === undefined ? {} : { defaultLocalCallbackUri: localCallbackUri }),
       ...(redirectHost === undefined ? {} : { defaultRedirectHost: redirectHost }),
       ...(redirectPort === undefined ? {} : { defaultRedirectPort: Number(redirectPort) }),
       ...(redirectPath === undefined ? {} : { defaultRedirectPath: redirectPath }),
@@ -61,15 +67,21 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
     const codeVerifier = input.pkce === true ? randomBytes(32).toString("base64url") : undefined
     const timeoutMs = input.timeoutMs ?? this.options.defaultTimeoutMs ?? 120_000
     const server = createServer()
-    const started = await listen(server, input.redirectUri, {
+    const slackRedirectUri = input.redirectUri ?? this.options.defaultSlackRedirectUri
+    const localCallbackUri =
+      input.localCallbackUri ??
+      this.options.defaultLocalCallbackUri ??
+      (slackRedirectUri !== undefined && isLocalCallbackUri(slackRedirectUri) ? slackRedirectUri : undefined)
+    const started = await listen(server, localCallbackUri, {
       host: this.options.defaultRedirectHost ?? defaultRedirectHost,
       port: this.options.defaultRedirectPort ?? defaultRedirectPort,
       path: this.options.defaultRedirectPath ?? "/oauth/slack/callback"
     })
+    const redirectUri = slackRedirectUri ?? started.redirectUri
     const authorizationUrl = buildAuthorizationUrl({
       authorizeUrl: this.options.authorizeUrl,
       clientId: input.clientId,
-      redirectUri: started.redirectUri,
+      redirectUri,
       scopes: input.scopes,
       userScopes: input.userScopes,
       state,
@@ -117,7 +129,7 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
             clientId: input.clientId,
             clientSecret: input.clientSecret,
             codeVerifier,
-            redirectUri: started.redirectUri
+            redirectUri
           })
           const profile = toAuthProfile(input.profileName, access, input.pkce === true ? "user" : "bot")
           response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end("<html><body>Slack auth complete. You can close this tab.</body></html>")
@@ -162,6 +174,16 @@ const listen = (
 
 const defaultRedirectHost = "localhost"
 const defaultRedirectPort = 45454
+
+const isLocalCallbackUri = (value: string): boolean => {
+  const parsed = new URL(value)
+  return parsed.protocol === "http:" && (
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "[::1]" ||
+    parsed.hostname === "::1"
+  )
+}
 
 const buildAuthorizationUrl = (input: {
   readonly authorizeUrl: string

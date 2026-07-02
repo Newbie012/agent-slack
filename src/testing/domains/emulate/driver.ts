@@ -181,7 +181,7 @@ export class EmulateTestDriver {
     return channel
   }
 
-  async completeOAuthInstall(options: { readonly authorizationUrl: string }) {
+  async completeOAuthInstall(options: { readonly authorizationUrl: string; readonly localCallbackUrl?: string }) {
     const authorizationUrl = new URL(options.authorizationUrl)
     const page = await fetch(authorizationUrl).then((response) => response.text())
     const body = new URLSearchParams({
@@ -196,8 +196,22 @@ export class EmulateTestDriver {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body,
-      redirect: "follow"
+      redirect: options.localCallbackUrl === undefined ? "follow" : "manual"
     })
+    if (options.localCallbackUrl !== undefined) {
+      const location = response.headers.get("location")
+      if (location === null) {
+        throw new Error("Emulate OAuth install did not return a redirect location")
+      }
+      const redirected = new URL(location)
+      const callback = new URL(options.localCallbackUrl)
+      callback.search = redirected.search
+      const callbackResponse = await fetch(callback)
+      if (!callbackResponse.ok) {
+        throw new Error(`Local OAuth callback failed with ${callbackResponse.status}: ${await callbackResponse.text()}`)
+      }
+      return
+    }
     if (!response.ok) {
       throw new Error(`Emulate OAuth install failed with ${response.status}: ${await response.text()}`)
     }

@@ -12,9 +12,10 @@ Agent Slack needs a browser login that works like a desktop CLI: install, approv
 2. User or agent runs `agent-slack auth login`.
 3. CLI opens Slack OAuth in the browser using PKCE.
 4. User approves Slack user scopes.
-5. Slack redirects to the local callback.
-6. CLI exchanges the code with `code_verifier`, stores the user token locally, and never handles a client secret.
-7. `agent-slack auth status --json` reports the connected profile and granted scopes.
+5. Slack redirects to the HTTPS relay.
+6. The relay forwards `code` and `state` to the local callback.
+7. CLI exchanges the code with `code_verifier`, stores the user token locally, and never handles a client secret.
+8. `agent-slack auth status --json` reports the connected profile and granted scopes.
 
 ## Contract
 
@@ -39,6 +40,7 @@ Token setup supports bot-token workflows. OAuth with app credentials is for deve
 
 - Browser login uses PKCE with `code_challenge_method=S256`.
 - Browser login requests user scopes, not bot scopes.
+- Distributed browser login uses a public HTTPS redirect URI.
 - Default local callback is `http://localhost:45454/oauth/slack/callback`.
 - No client secret is embedded in the CLI.
 - Tokens are never printed to stdout or stderr.

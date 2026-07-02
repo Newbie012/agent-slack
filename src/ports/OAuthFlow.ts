@@ -8,6 +8,7 @@ export interface OAuthLoginRequest {
   readonly userScopes: readonly string[]
   readonly pkce?: boolean | undefined
   readonly redirectUri?: string | undefined
+  readonly localCallbackUri?: string | undefined
   readonly authUrlOut?: string | undefined
   readonly timeoutMs?: number | undefined
   readonly openBrowser?: boolean | undefined

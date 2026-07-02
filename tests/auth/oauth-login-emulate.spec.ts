@@ -50,6 +50,46 @@ describe("auth oauth login with Emulate", () => {
     })
   })
 
+  it("uses a hosted HTTPS redirect URI with a local CLI callback", async () => {
+    await using driver = await SlackCliTestDriver.create()
+
+    // ARRANGE
+    await driver.emulate.start()
+    const hostedRedirectUri = "https://agent-slack.example.com/oauth/slack/callback"
+    const localCallbackUrl = "http://localhost:45454/oauth/slack/callback"
+
+    // ACT
+    const login = driver.cli.runJson({
+      args: [
+        "auth",
+        "login",
+        "--client-id",
+        "12345.67890",
+        "--redirect-uri",
+        hostedRedirectUri,
+        "--timeout-ms",
+        "5000",
+        "--json"
+      ]
+    })
+    const authorizationUrl = await waitForOpenedOAuthUrl(driver)
+    await driver.emulate.completeOAuthInstall({ authorizationUrl, localCallbackUrl })
+    const result = await login
+    const parsedUrl = new URL(authorizationUrl)
+
+    // ASSERT
+    expect(result.exitCode).toBe(0)
+    expect(parsedUrl.searchParams.get("redirect_uri")).toBe(hostedRedirectUri)
+    expect(result.envelope).toMatchObject({
+      ok: true,
+      method: "auth.login",
+      data: {
+        tokenType: "user",
+        hasUserToken: true
+      }
+    })
+  })
+
   it("opens the OAuth URL in the browser by default", async () => {
     await using driver = await SlackCliTestDriver.create()
 

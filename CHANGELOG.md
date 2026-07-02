@@ -1,5 +1,11 @@
 # @eliya-oss/agent-slack
 
+## 0.1.9
+
+### Patch Changes
+
+- Support hosted HTTPS OAuth redirect relays for distributed Slack apps.
+
 ## 0.1.8
 
 ### Patch Changes
