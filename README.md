@@ -1,6 +1,6 @@
 <div align="center">
 
-# Agent Slack
+# agent-slack
 
 Slack context for AI agents, exposed through the `agent-slack` CLI.
 Short alias: `aslk`.
