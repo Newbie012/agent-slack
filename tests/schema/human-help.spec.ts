@@ -17,6 +17,28 @@ describe("human help and completions", () => {
     expect(result.stdout).toContain("channels:history")
   })
 
+  it("renders onboarding-focused auth login help", async () => {
+    await using driver = await SlackCliTestDriver.create()
+
+    // ARRANGE
+
+    // ACT
+    const result = await driver.cli.run({ args: ["auth", "login", "--help"] })
+
+    // ASSERT
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain("Connect a Slack workspace profile.")
+    expect(result.stdout).toContain("Browser login")
+    expect(result.stdout).toContain("PKCE")
+    expect(result.stdout).toContain("The CLI never stores a Slack app secret.")
+    expect(result.stdout).toContain("Token setup")
+    expect(result.stdout).toContain("--token \"$SLACK_BOT_TOKEN\"")
+    expect(result.stdout).toContain("agent-slack auth login")
+    expect(result.stdout).toContain("Normal users should not create a Slack app")
+    expect(result.stdout).not.toContain("Flags:")
+    expect(result.stdout).not.toContain("Safety:")
+  })
+
   it("renders zsh completion from metadata", async () => {
     await using driver = await SlackCliTestDriver.create()
 

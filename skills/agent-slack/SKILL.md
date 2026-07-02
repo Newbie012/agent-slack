@@ -1,20 +1,50 @@
 ---
 name: agent-slack
-description: "Use when Codex needs Slack context through the `agent-slack` CLI: authenticate, inspect profiles/scopes, read channels, messages, threads, files, users, search context, or call Slack Web API methods with agent-readable JSON or NDJSON output."
+description: "Use when Codex needs Slack context through the `agent-slack` CLI: authenticate, inspect profiles/scopes, read channels, messages, threads, files, users, search context, or call Slack Web API methods with JSON or NDJSON output."
 ---
 
 # agent-slack CLI
 
-Use `agent-slack` as the Slack context boundary. `aslk` is the short alias. Prefer read-only commands and preserve Slack's permission model: the CLI can only return data allowed by the active token, scopes, channel membership, workspace policy, and Slack plan.
+Use `agent-slack` as the Slack context boundary. `aslk` is the short alias. Prefer read-only commands. The CLI can only return data allowed by the active token, scopes, channel membership, workspace policy, and Slack plan.
 
 ## Workflow
 
 1. Check availability: `agent-slack describe --json`.
 2. Check auth: `agent-slack auth status --json`.
-3. If auth is missing, ask the user to run `agent-slack auth login --oauth`; it opens Slack OAuth in the browser by default. For headless flows use `--auth-url-out PATH` or `--no-open`.
+3. If auth is missing, ask the user to run `agent-slack auth login`. It opens Slack in the browser with PKCE and stores a local Slack profile.
 4. Use specific read commands before raw API calls.
 5. Use `--json` for bounded results and `--format ndjson` for large context streams.
 6. Read structured errors from stderr; do not parse progress text from stdout.
+
+## Onboarding
+
+Browser login:
+
+```bash
+agent-slack auth login
+```
+
+Agent Slack opens Slack in the browser with PKCE and stores a local Slack profile. Users should not create a Slack app or handle `client-id`/`client-secret`.
+
+Token setup:
+
+```bash
+agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes channels:read,channels:history,users:read --json
+```
+
+This stores an existing Slack bot token as a local profile.
+
+Developer/self-hosted fallback:
+
+1. Create or open a Slack app at https://api.slack.com/apps.
+2. Go to **OAuth & Permissions**, add the needed bot scopes, install the app to the workspace, and copy the bot token.
+3. For OAuth auth, get the **Client ID** and **Client Secret** from **Basic Information > App Credentials** in that Slack app, then run:
+
+```bash
+agent-slack auth login --oauth --client-id "$SLACK_CLIENT_ID" --client-secret "$SLACK_CLIENT_SECRET" --json
+```
+
+Treat Slack app creation and client credentials as an advanced developer fallback only.
 
 ## Common Commands
 

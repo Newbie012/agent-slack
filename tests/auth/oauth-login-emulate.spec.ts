@@ -5,6 +5,51 @@ import { describe, expect, it } from "vitest"
 import { SlackCliTestDriver } from "../../src/testing/driver.js"
 
 describe("auth oauth login with Emulate", () => {
+  it("opens Slack OAuth with PKCE for browser login", async () => {
+    await using driver = await SlackCliTestDriver.create()
+
+    // ARRANGE
+    await driver.emulate.start()
+
+    // ACT
+    const login = driver.cli.run({
+      args: [
+        "auth",
+        "login",
+        "--client-id",
+        "12345.67890",
+        "--timeout-ms",
+        "5000",
+        "--json"
+      ]
+    })
+    const authorizationUrl = await waitForOpenedOAuthUrl(driver)
+    await driver.emulate.completeOAuthInstall({ authorizationUrl })
+    const result = await login
+    const parsedUrl = new URL(authorizationUrl)
+
+    // ASSERT
+    expect(result.exitCode).toBe(0)
+    expect(parsedUrl.searchParams.get("code_challenge_method")).toBe("S256")
+    expect(parsedUrl.searchParams.get("code_challenge")).toEqual(expect.any(String))
+    expect(parsedUrl.searchParams.get("client_secret")).toBeNull()
+    expect(parsedUrl.searchParams.get("redirect_uri")).toBe("http://localhost:45454/oauth/slack/callback")
+    expect(parsedUrl.searchParams.get("scope")).toBeNull()
+    expect(parsedUrl.searchParams.get("user_scope")).toContain("channels:read")
+    expect(result.stdout).not.toContain("xoxb-")
+    expect(result.stdout).not.toContain("xoxp-")
+    expect(result.envelope).toMatchObject({
+      ok: true,
+      method: "auth.login",
+      data: {
+        tokenType: "user",
+        hasBotToken: false,
+        hasUserToken: true,
+        scopes: expect.arrayContaining(["channels:read", "channels:history", "users:read"])
+      }
+    })
+  })
+
   it("opens the OAuth URL in the browser by default", async () => {
     await using driver = await SlackCliTestDriver.create()
 

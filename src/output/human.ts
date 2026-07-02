@@ -1,16 +1,17 @@
-import type { CommandEnvelope } from "../domain/slack.js"
+import type { CommandEnvelope, ErrorEnvelope } from "../domain/slack.js"
 
 export interface HumanRenderOptions {
   readonly color: boolean
 }
 
-type PaintName = "bold" | "cyan" | "dim" | "green" | "yellow"
+type PaintName = "bold" | "cyan" | "dim" | "green" | "red" | "yellow"
 
 const codes: Record<PaintName, readonly [number, number]> = {
   bold: [1, 22],
   cyan: [36, 39],
   dim: [2, 22],
   green: [32, 39],
+  red: [31, 39],
   yellow: [33, 39]
 }
 
@@ -35,6 +36,25 @@ export const renderHumanEnvelope = (
     ...(data.length === 0 ? [] : ["", ...data])
   ]
 
+  return `${lines.join("\n")}\n`
+}
+
+export const renderHumanErrorEnvelope = (
+  envelope: ErrorEnvelope,
+  options: HumanRenderOptions
+): string => {
+  const paint = (name: PaintName, value: string) =>
+    options.color ? `\u001b[${codes[name][0]}m${value}\u001b[${codes[name][1]}m` : value
+  const error = envelope.error
+  const lines = [
+    `${paint("red", "Error")} ${paint("bold", error.type)}`,
+    error.title,
+    ...(error.slack_error === undefined ? [] : ["", `${paint("dim", "Slack")} ${error.slack_error}`]),
+    ...(error.retry_after_seconds === undefined ? [] : [`${paint("dim", "Retry after")} ${error.retry_after_seconds}s`]),
+    ...(error.suggestion === undefined ? [] : ["", paint("yellow", "Next"), `  ${error.suggestion}`]),
+    "",
+    `${paint("dim", "Trace")} ${error.trace_id}`
+  ]
   return `${lines.join("\n")}\n`
 }
 
@@ -77,7 +97,7 @@ const renderCommandCatalog = (
     "",
     `${paint("dim", "Use")}     ${paint("cyan", `${catalog.name} <command> [--json]`)}`,
     ...(aliases === undefined ? [] : [`${paint("dim", "Alias")}   ${aliases}`]),
-    `${paint("dim", "Output")}  human in terminals, JSON when piped or with --json`,
+    `${paint("dim", "Output")}  readable in terminals; JSON for pipes and --json`,
     "",
     ...groups.flatMap((group) => renderCommandGroup(group, paint)),
     "",

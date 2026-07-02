@@ -38,6 +38,7 @@ Defaults:
 
 ```bash
 agent-slack auth login
+agent-slack auth login --token xoxb-... --scopes channels:read,channels:history,users:read
 agent-slack auth login --profile work --scopes channels:read,channels:history --user-scopes search:read.public,search:read.private
 agent-slack auth login --oauth --client-id CLIENT_ID --client-secret CLIENT_SECRET --auth-url-out /tmp/agent-slack-auth-url
 agent-slack auth login --oauth --client-id CLIENT_ID --client-secret CLIENT_SECRET --no-open
@@ -49,9 +50,13 @@ agent-slack auth logout --profile work
 
 Auth behavior:
 
-- Uses Slack OAuth v2 with a localhost callback.
-- Opens the Slack OAuth URL in the default browser by default. Use `--no-open` to print the URL only, or `--auth-url-out PATH` for headless agents and tests.
-- Bot scopes go in `scope=...`; user scopes go in `user_scope=...`.
+- Primary setup: `agent-slack auth login` uses the bundled Agent Slack public Client ID, opens Slack in the browser with PKCE, and stores a local Slack profile.
+- Users can also provide an existing Slack bot token with `--token`.
+- A normal user should not create a Slack app or provide client credentials.
+- Developer fallback: OAuth mode can use Slack app credentials. The **Client ID** and **Client Secret** come from the Slack app's **Basic Information > App Credentials** section.
+- OAuth opens the Slack OAuth URL in the default browser by default. Use `--no-open` to print the URL only, or `--auth-url-out PATH` for headless agents.
+- PKCE uses `user_scope=...`; OAuth with app credentials uses `scope=...` for bot scopes.
+- Default local callback: `http://localhost:45454/oauth/slack/callback`.
 - Stores profiles outside the project directory. The default store is `~/.config/agent-slack/profiles.json`; set `AGENT_SLACK_TOKEN_STORE=keychain` on macOS to keep token secrets in Keychain and only profile metadata on disk.
 - Supports multiple profiles and workspaces.
 - `auth status --json` returns token type, team, enterprise, user/bot identity, granted scopes, and missing recommended scopes.
@@ -106,7 +111,7 @@ agent-slack conversation history CHANNEL_ID [--oldest TS] [--latest TS] [--all]
 agent-slack conversation context CHANNEL_ID [--since 24h] [--include users,reactions,files,threads]
 ```
 
-`conversation context` is the agent-friendly form: normalized messages, hydrated users, thread refs, file refs, reactions, and permalinks in one deterministic payload.
+`conversation context` returns normalized messages, hydrated users, thread refs, file refs, reactions, and permalinks in one deterministic payload for agents.
 
 ### Threads and messages
 
@@ -167,8 +172,8 @@ cat payload.json | agent-slack api call conversations.history -
 
 Rules:
 
-- `--payload`, `@file`, and `-` pass raw JSON matching Slack's API fields.
-- Convenience flags may be added later, but raw payload always wins coverage.
+- `--payload`, `@file`, and `-` pass JSON matching Slack's API fields.
+- Convenience flags may be added later, but JSON payloads keep full Web API coverage.
 - `--raw` returns Slack's exact response body.
 - Without `--raw`, responses use the CLI envelope below.
 - `--all --format ndjson` streams item records for cursor-paginated methods.
@@ -247,7 +252,7 @@ Schema output includes:
 
 - command description and examples
 - positional args and flags
-- raw payload schema when known
+- payload schema when known
 - required Slack method/scopes
 - output schema
 - pagination behavior
@@ -281,8 +286,8 @@ agent-slack api call some.newMethod --payload @request.json --json
 
 ## Build Order
 
-1. Auth profiles, keychain storage, and `auth test/status/scopes`.
-2. Generic `api call`, raw payload input, JSON envelope, structured errors.
+1. Slack profiles, keychain storage, and `auth test/status/scopes`.
+2. Generic `api call`, JSON payload input, JSON envelope, structured errors.
 3. `describe --json` and generated method catalog.
 4. Conversation, thread, user, file, and search convenience commands.
 5. Agent context commands with hydration and NDJSON streaming.

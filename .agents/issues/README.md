@@ -45,4 +45,4 @@ To convert manually:
 1. Use the first heading as the GitHub issue title.
 2. Copy the rest of the file as the body.
 3. Apply the listed labels.
-4. Keep the local issue file as the durable agent-readable mirror.
+4. Keep the local issue file as the durable agent-facing mirror.

@@ -34,7 +34,7 @@ node dist/main.js auth status --json
 
 ## Remaining
 
-- None from the first implementation backlog. Future hardening can still expand method catalog breadth, admin/Enterprise Grid surfaces, and release packaging.
+- Future hardening can still expand method catalog breadth, admin/Enterprise Grid surfaces, and release packaging.
 
 ## Decisions To Preserve
 

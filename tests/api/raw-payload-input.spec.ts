@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { SlackCliTestDriver } from "../../src/testing/driver.js"
 
-describe("api raw payload input", () => {
-  it("calls Slack with raw JSON payload", async () => {
+describe("api payload input", () => {
+  it("calls Slack with a JSON payload", async () => {
     await using driver = await SlackCliTestDriver.create()
 
     // ARRANGE

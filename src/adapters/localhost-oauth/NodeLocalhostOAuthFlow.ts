@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 import { spawn } from "node:child_process"
 import { writeFile } from "node:fs/promises"
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
@@ -12,6 +12,7 @@ interface OAuthFlowOptions {
   readonly authorizeUrl: string
   readonly tokenUrl: string
   readonly defaultRedirectHost?: string
+  readonly defaultRedirectPort?: number
   readonly defaultRedirectPath?: string
   readonly defaultTimeoutMs?: number
   readonly openBrowser?: (url: string) => Promise<boolean>
@@ -42,12 +43,14 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
     const apiBaseUrl = env.AGENT_SLACK_API_BASE_URL ?? env.SLK_SLACK_API_BASE_URL
     const emulatorBaseUrl = apiBaseUrl?.replace(/\/api\/?$/, "")
     const redirectHost = env.AGENT_SLACK_OAUTH_REDIRECT_HOST ?? env.SLK_OAUTH_REDIRECT_HOST
+    const redirectPort = env.AGENT_SLACK_OAUTH_REDIRECT_PORT ?? env.SLK_OAUTH_REDIRECT_PORT
     const redirectPath = env.AGENT_SLACK_OAUTH_REDIRECT_PATH ?? env.SLK_OAUTH_REDIRECT_PATH
     const timeoutMs = env.AGENT_SLACK_OAUTH_TIMEOUT_MS ?? env.SLK_OAUTH_TIMEOUT_MS
     return new NodeLocalhostOAuthFlow({
       authorizeUrl: env.AGENT_SLACK_OAUTH_AUTHORIZE_URL ?? env.SLK_SLACK_OAUTH_AUTHORIZE_URL ?? (emulatorBaseUrl === undefined ? "https://slack.com/oauth/v2/authorize" : `${emulatorBaseUrl}/oauth/v2/authorize`),
       tokenUrl: env.AGENT_SLACK_OAUTH_ACCESS_URL ?? env.SLK_SLACK_OAUTH_ACCESS_URL ?? (apiBaseUrl === undefined ? "https://slack.com/api/oauth.v2.access" : `${apiBaseUrl.replace(/\/?$/, "/")}oauth.v2.access`),
       ...(redirectHost === undefined ? {} : { defaultRedirectHost: redirectHost }),
+      ...(redirectPort === undefined ? {} : { defaultRedirectPort: Number(redirectPort) }),
       ...(redirectPath === undefined ? {} : { defaultRedirectPath: redirectPath }),
       ...(timeoutMs === undefined ? {} : { defaultTimeoutMs: Number(timeoutMs) })
     })
@@ -55,10 +58,12 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
 
   async login(input: OAuthLoginRequest): Promise<AuthProfile> {
     const state = randomBytes(24).toString("base64url")
+    const codeVerifier = input.pkce === true ? randomBytes(32).toString("base64url") : undefined
     const timeoutMs = input.timeoutMs ?? this.options.defaultTimeoutMs ?? 120_000
     const server = createServer()
     const started = await listen(server, input.redirectUri, {
-      host: this.options.defaultRedirectHost ?? "127.0.0.1",
+      host: this.options.defaultRedirectHost ?? defaultRedirectHost,
+      port: this.options.defaultRedirectPort ?? defaultRedirectPort,
       path: this.options.defaultRedirectPath ?? "/oauth/slack/callback"
     })
     const authorizationUrl = buildAuthorizationUrl({
@@ -67,7 +72,8 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
       redirectUri: started.redirectUri,
       scopes: input.scopes,
       userScopes: input.userScopes,
-      state
+      state,
+      ...(codeVerifier === undefined ? {} : { codeChallenge: codeChallengeFor(codeVerifier) })
     })
 
     if (input.authUrlOut !== undefined) {
@@ -110,9 +116,10 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
             code,
             clientId: input.clientId,
             clientSecret: input.clientSecret,
+            codeVerifier,
             redirectUri: started.redirectUri
           })
-          const profile = toAuthProfile(input.profileName, access)
+          const profile = toAuthProfile(input.profileName, access, input.pkce === true ? "user" : "bot")
           response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end("<html><body>Slack auth complete. You can close this tab.</body></html>")
           clearTimeout(timer)
           closeServer(server)
@@ -131,13 +138,13 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
 const listen = (
   server: ReturnType<typeof createServer>,
   redirectUri: string | undefined,
-  fallback: { readonly host: string; readonly path: string }
+  fallback: { readonly host: string; readonly port: number; readonly path: string }
 ): Promise<{ readonly redirectUri: string; readonly path: string }> =>
   new Promise((resolve, reject) => {
     const parsed = redirectUri === undefined ? null : new URL(redirectUri)
     const host = parsed?.hostname ?? fallback.host
     const path = parsed?.pathname ?? fallback.path
-    const port = parsed === null || parsed.port === "" ? 0 : Number(parsed.port)
+    const port = parsed === null || parsed.port === "" ? fallback.port : Number(parsed.port)
     if (!Number.isInteger(port) || port < 0) {
       reject(new UsageError("OAuth redirect URI must include a valid port", { redirectUri }))
       return
@@ -145,13 +152,16 @@ const listen = (
     server.once("error", reject)
     server.listen(port, host, () => {
       const address = server.address() as AddressInfo
-      const actualPort = parsed === null || parsed.port === "" ? address.port : port
+      const actualPort = parsed === null || parsed.port === "" ? port : address.port
       resolve({
         redirectUri: redirectUri ?? `http://${host}:${actualPort}${path}`,
         path
       })
     })
   })
+
+const defaultRedirectHost = "localhost"
+const defaultRedirectPort = 45454
 
 const buildAuthorizationUrl = (input: {
   readonly authorizeUrl: string
@@ -160,15 +170,22 @@ const buildAuthorizationUrl = (input: {
   readonly scopes: readonly string[]
   readonly userScopes: readonly string[]
   readonly state: string
+  readonly codeChallenge?: string | undefined
 }): string => {
   const url = new URL(input.authorizeUrl)
   url.searchParams.set("client_id", input.clientId)
-  url.searchParams.set("scope", input.scopes.join(","))
+  if (input.scopes.length > 0) {
+    url.searchParams.set("scope", input.scopes.join(","))
+  }
   if (input.userScopes.length > 0) {
     url.searchParams.set("user_scope", input.userScopes.join(","))
   }
   url.searchParams.set("redirect_uri", input.redirectUri)
   url.searchParams.set("state", input.state)
+  if (input.codeChallenge !== undefined) {
+    url.searchParams.set("code_challenge", input.codeChallenge)
+    url.searchParams.set("code_challenge_method", "S256")
+  }
   return url.toString()
 }
 
@@ -176,18 +193,25 @@ const exchangeCode = async (input: {
   readonly tokenUrl: string
   readonly code: string
   readonly clientId: string
-  readonly clientSecret: string
+  readonly clientSecret?: string | undefined
+  readonly codeVerifier?: string | undefined
   readonly redirectUri: string
 }): Promise<SlackOAuthAccessResponse> => {
+  const requestBody = new URLSearchParams({
+    code: input.code,
+    client_id: input.clientId,
+    redirect_uri: input.redirectUri
+  })
+  if (input.clientSecret !== undefined) {
+    requestBody.set("client_secret", input.clientSecret)
+  }
+  if (input.codeVerifier !== undefined) {
+    requestBody.set("code_verifier", input.codeVerifier)
+  }
   const response = await fetch(input.tokenUrl, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code: input.code,
-      client_id: input.clientId,
-      client_secret: input.clientSecret,
-      redirect_uri: input.redirectUri
-    })
+    body: requestBody
   })
   const body = await response.json() as SlackOAuthAccessResponse
   if (body.ok === false) {
@@ -201,21 +225,32 @@ const exchangeCode = async (input: {
   return body
 }
 
-const toAuthProfile = (profileName: string, response: SlackOAuthAccessResponse): AuthProfile => {
+const toAuthProfile = (
+  profileName: string,
+  response: SlackOAuthAccessResponse,
+  preferredTokenType: "bot" | "user"
+): AuthProfile => {
   const botScopes = splitScopes(response.scope)
   const userScopes = splitScopes(response.authed_user?.scope)
+  const rootTokenIsUser = preferredTokenType === "user" && response.access_token !== undefined && response.token_type !== "bot"
+  const userToken = response.authed_user?.access_token ?? (rootTokenIsUser ? response.access_token : undefined)
+  const useUserToken = preferredTokenType === "user" && userToken !== undefined
+  const scopes = useUserToken && userScopes.length > 0 ? userScopes : [...botScopes, ...userScopes]
   return {
     name: ProfileName.make(profileName),
-    tokenType: response.access_token === undefined ? "user" : "bot",
+    tokenType: useUserToken || response.access_token === undefined ? "user" : "bot",
     enterpriseId: response.enterprise?.id ?? null,
     ...(response.team?.id === undefined ? {} : { teamId: response.team.id }),
     ...(response.authed_user?.id === undefined ? {} : { userId: response.authed_user.id }),
     ...(response.bot_user_id === undefined ? {} : { botId: response.bot_user_id }),
-    ...(response.access_token === undefined ? {} : { botToken: response.access_token }),
-    ...(response.authed_user?.access_token === undefined ? {} : { userToken: response.authed_user.access_token }),
-    scopes: [...new Set([...botScopes, ...userScopes])].map(Scope.make)
+    ...(response.access_token === undefined || useUserToken ? {} : { botToken: response.access_token }),
+    ...(userToken === undefined ? {} : { userToken }),
+    scopes: [...new Set(scopes)].map(Scope.make)
   }
 }
+
+const codeChallengeFor = (codeVerifier: string): string =>
+  createHash("sha256").update(codeVerifier).digest("base64url")
 
 const splitScopes = (value: string | undefined): readonly string[] =>
   value === undefined || value.trim() === "" ? [] : value.split(",").map((scope) => scope.trim()).filter(Boolean)

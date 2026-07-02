@@ -12,7 +12,7 @@ export const CLI_VERSION = packageJson.version ?? "0.0.0"
 export const commandMetadata: readonly CommandMetadata[] = [
   {
     path: ["describe"],
-    summary: "Describe the full CLI command tree as JSON.",
+    summary: "Print the full command catalog as JSON.",
     flags: ["--json"],
     safety: "read",
     output: "command metadata",
@@ -20,7 +20,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["completion"],
-    summary: "Generate shell completion words.",
+    summary: "Generate a shell completion script.",
     args: ["bash|zsh"],
     safety: "read",
     output: "shell completion script",
@@ -28,7 +28,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["auth", "status"],
-    summary: "Show the active Slack auth profile.",
+    summary: "Show the active Slack profile.",
     flags: ["--profile", "--json"],
     safety: "read",
     output: "profile status",
@@ -36,18 +36,19 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["auth", "login"],
-    summary: "Create a Slack auth profile with OAuth or a seeded token.",
+    summary: "Connect a Slack workspace profile.",
     flags: ["--profile", "--oauth", "--client-id", "--client-secret", "--scopes", "--user-scopes", "--redirect-uri", "--auth-url-out", "--timeout-ms", "--no-open", "--token", "--json"],
     safety: "read",
     output: "profile status",
     examples: [
+      "agent-slack auth login --json",
+      "AGENT_SLACK_TOKEN=xoxb-... agent-slack auth login --profile work --scopes channels:read --json",
       "agent-slack auth login --oauth --client-id 123.456 --client-secret secret --scopes channels:read,channels:history --json",
-      "AGENT_SLACK_TOKEN=xoxb-... agent-slack auth login --profile work --scopes channels:read --json"
     ]
   },
   {
     path: ["auth", "scopes"],
-    summary: "Show granted scopes for the active profile.",
+    summary: "Show scopes granted to the active profile.",
     flags: ["--profile", "--json"],
     safety: "read",
     output: "scope list",
@@ -55,7 +56,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["auth", "profiles", "list"],
-    summary: "List local auth profiles.",
+    summary: "List local Slack profiles.",
     flags: ["--json"],
     safety: "read",
     output: "profile list",
@@ -63,7 +64,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["auth", "logout"],
-    summary: "Delete a local auth profile.",
+    summary: "Delete a local Slack profile.",
     flags: ["--profile", "--json"],
     safety: "destructive",
     output: "deleted profile status",
@@ -71,7 +72,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["auth", "test"],
-    summary: "Call Slack auth.test for the active profile.",
+    summary: "Test the active Slack profile.",
     methods: ["auth.test"],
     scopes: [],
     safety: "read",
@@ -80,7 +81,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["team", "get"],
-    summary: "Show workspace info.",
+    summary: "Show Slack workspace details.",
     methods: ["team.info"],
     scopes: ["team:read"],
     safety: "read",
@@ -98,7 +99,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["enterprise", "get"],
-    summary: "Show enterprise/workspace identity from team info.",
+    summary: "Show enterprise and workspace identity.",
     methods: ["team.info"],
     scopes: ["team:read"],
     safety: "read",
@@ -166,7 +167,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["api", "call"],
-    summary: "Call any Slack Web API method using a raw JSON payload.",
+    summary: "Call a Slack Web API method with a JSON payload.",
     args: ["METHOD", "PAYLOAD_STDIN_MARKER"],
     flags: ["--payload", "--profile", "--token", "--all", "--raw", "--format", "--allow-write", "--yes", "--json"],
     safety: "unknown",
@@ -178,7 +179,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["api", "methods", "list"],
-    summary: "List bundled Slack method metadata.",
+    summary: "List bundled Slack Web API metadata.",
     flags: ["--family", "--json"],
     safety: "read",
     output: "method metadata list",
@@ -214,7 +215,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["conversation", "context"],
-    summary: "Return agent-friendly channel context.",
+    summary: "Build channel context for agents.",
     args: ["CHANNEL_ID"],
     methods: ["conversations.history", "conversations.replies", "users.info"],
     scopes: ["channels:history", "users:read"],
@@ -244,7 +245,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["message", "permalink"],
-    summary: "Return a Slack permalink for a message.",
+    summary: "Get a Slack permalink for a message.",
     flags: ["--channel", "--ts", "--json"],
     methods: ["chat.getPermalink"],
     safety: "read",
@@ -253,7 +254,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["search", "context"],
-    summary: "Search Slack for agent context.",
+    summary: "Search Slack for relevant context.",
     flags: ["--query", "--content-types", "--json"],
     methods: ["assistant.search.context"],
     scopes: ["search:read.public", "search:read.private"],
@@ -299,6 +300,9 @@ export const describeCommandGroup = (group: string) => ({
 })
 
 export const renderHumanHelp = (path: readonly string[]): string => {
+  if (path.join(" ") === "auth login") {
+    return renderAuthLoginHelp()
+  }
   const command = findCommandMetadata(path)
   if (command !== null) {
     return [
@@ -306,11 +310,8 @@ export const renderHumanHelp = (path: readonly string[]): string => {
       "",
       command.summary,
       "",
-      command.args === undefined ? "" : `Arguments: ${command.args.join(" ")}`,
-      command.flags === undefined ? "" : `Flags: ${command.flags.join(", ")}`,
+      command.args === undefined ? "" : `Usage: ${PRIMARY_COMMAND_NAME} ${command.path.join(" ")} ${command.args.join(" ")}`,
       command.scopes === undefined ? "" : `Scopes: ${command.scopes.join(", ")}`,
-      `Safety: ${command.safety}`,
-      `Output: ${command.output}`,
       "",
       "Examples:",
       ...command.examples.map((example) => `  ${example}`)
@@ -321,12 +322,49 @@ export const renderHumanHelp = (path: readonly string[]): string => {
   return [
     PRIMARY_COMMAND_NAME,
     "",
-    "Agent-readable Slack CLI.",
+    "Slack context CLI for agents.",
     "",
     "Commands:",
     ...commands.map((item) => `  ${item.path.join(" ").padEnd(28)} ${item.summary}`)
   ].join("\n") + "\n"
 }
+
+const renderAuthLoginHelp = (): string => [
+  "agent-slack auth login",
+  "",
+  "Connect a Slack workspace profile.",
+  "",
+  "Browser login",
+  "  agent-slack auth login",
+  "",
+  "  Opens Slack in the browser with PKCE and stores a local Slack profile.",
+  "  The CLI never stores a Slack app secret.",
+  "",
+  "Token setup",
+  "  agent-slack auth login --token \"$SLACK_BOT_TOKEN\" --scopes channels:read,channels:history,users:read",
+  "",
+  "  Stores an existing bot token as a local Slack profile.",
+  "",
+  "Developer fallback: Slack app credentials",
+  "  agent-slack auth login --oauth --client-id \"$SLACK_CLIENT_ID\" --client-secret \"$SLACK_CLIENT_SECRET\"",
+  "",
+  "Options",
+  "  --profile NAME          Save as a named profile.",
+  "  --token TOKEN           Store an existing Slack bot token.",
+  "  --scopes LIST           Scopes to request (PKCE) or record (token setup).",
+  "  --user-scopes LIST      User scopes to request during OAuth.",
+  "  --oauth                 Use Slack OAuth with app credentials.",
+  "  --client-id VALUE       Override the Slack app Client ID.",
+  "  --client-secret VALUE   Slack app Client Secret.",
+  "  --no-open               Print OAuth URL instead of opening the browser.",
+  "  --auth-url-out PATH     Write OAuth URL for headless flows.",
+  "  --json                  Emit machine-readable JSON.",
+  "",
+  "Notes",
+  "  Normal users should not create a Slack app or handle client credentials.",
+  "  App credentials are only for development and self-hosted setups.",
+  ""
+].join("\n")
 
 export const renderCompletion = (shell: string): string => {
   const words = [...new Set(commandMetadata.flatMap((command) => command.path))]

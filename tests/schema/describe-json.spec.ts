@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { SlackCliTestDriver } from "../../src/testing/driver.js"
 
 describe("schema describe json", () => {
-  it("describes the command tree", async () => {
+  it("describes the command catalog", async () => {
     await using driver = await SlackCliTestDriver.create()
 
     // ARRANGE

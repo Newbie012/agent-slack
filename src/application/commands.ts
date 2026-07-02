@@ -1,7 +1,7 @@
 import { flagBoolean, flagString, requireFlag, splitCsv } from "../cli/args.js"
 import { PRIMARY_COMMAND_NAME, describeAllCommands, describeCommandGroup, findCommandMetadata, renderCompletion, renderHumanHelp } from "../cli/metadata.js"
 import type { CliExecutionOptions, ParsedArgs } from "../cli/types.js"
-import { NotAuthenticated, ResourceNotFound, UnsupportedMethod, UsageError } from "../domain/errors.js"
+import { ResourceNotFound, UnsupportedMethod, UsageError } from "../domain/errors.js"
 import { ProfileName, Scope } from "../domain/ids.js"
 import type { AuthProfile } from "../domain/slack.js"
 import { pagingFrom, successEnvelope, toNdjson } from "../output/envelope.js"
@@ -235,18 +235,23 @@ const authCommand = async (parsed: ParsedArgs, services: CliServices): Promise<D
       return { method: "auth.login", profile, stdoutValue: sanitizeProfile(profile) }
     }
 
-    const clientId = flagString(parsed, "client-id") ?? process.env.AGENT_SLACK_CLIENT_ID ?? process.env.SLK_CLIENT_ID ?? process.env.SLACK_CLIENT_ID
+    const clientId = flagString(parsed, "client-id") ?? process.env.AGENT_SLACK_CLIENT_ID ?? process.env.AGENT_SLACK_PUBLIC_CLIENT_ID ?? process.env.SLK_CLIENT_ID ?? process.env.SLACK_CLIENT_ID ?? defaultPkceClientId
     const clientSecret = flagString(parsed, "client-secret") ?? process.env.AGENT_SLACK_CLIENT_SECRET ?? process.env.SLK_CLIENT_SECRET ?? process.env.SLACK_CLIENT_SECRET
-    if (clientId === undefined || clientSecret === undefined) {
-      throw new NotAuthenticated("OAuth login needs --client-id/--client-secret or AGENT_SLACK_CLIENT_ID/AGENT_SLACK_CLIENT_SECRET")
+    const byoOAuth = flagBoolean(parsed, "oauth")
+    if (byoOAuth && (clientId === undefined || clientSecret === undefined)) {
+      throw new UsageError("Slack OAuth with app credentials needs both --client-id and --client-secret.", {
+        suggestion: "Use --token with an existing Slack bot token, or pass both app credentials from Basic Information > App Credentials."
+      })
     }
     const scopes = splitCsv(flagString(parsed, "scopes"))
+    const userScopes = splitCsv(flagString(parsed, "user-scopes"))
+    const pkceUserScopes = userScopes.length > 0 ? userScopes : scopes.length > 0 ? scopes : defaultPkceUserScopes
     const profile = await services.oauthFlow.login({
       profileName,
       clientId,
-      clientSecret,
-      scopes: scopes.length === 0 ? defaultOAuthScopes : scopes,
-      userScopes: splitCsv(flagString(parsed, "user-scopes")),
+      ...(byoOAuth ? { clientSecret } : { pkce: true }),
+      scopes: byoOAuth ? (scopes.length === 0 ? defaultOAuthScopes : scopes) : [],
+      userScopes: byoOAuth ? userScopes : pkceUserScopes,
       redirectUri: flagString(parsed, "redirect-uri"),
       authUrlOut: flagString(parsed, "auth-url-out"),
       timeoutMs: numberFlag(parsed, "timeout-ms"),
@@ -274,6 +279,9 @@ const defaultOAuthScopes = [
   "bookmarks:read",
   "team:read"
 ] as const
+
+const defaultPkceUserScopes = defaultOAuthScopes
+const defaultPkceClientId = "11499810382723.11506074725874"
 
 const apiCall = async (parsed: ParsedArgs, services: CliServices): Promise<DispatchResult> => {
   const method = requirePositional(parsed.positionals, 2, "METHOD")

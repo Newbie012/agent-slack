@@ -33,10 +33,14 @@ export const successEnvelope = (input: {
 
 export const errorEnvelope = (error: unknown): { readonly envelope: ErrorEnvelope; readonly exitCode: number } => {
   const normalized = normalizeUnknownError(error)
-  const detailsSlackError = typeof normalized.details.slackError === "string" ? normalized.details.slackError : undefined
+  const details = Object.fromEntries(
+    Object.entries(normalized.details).filter(([key]) => key !== "suggestion")
+  )
+  const detailsSlackError = typeof details.slackError === "string" ? details.slackError : undefined
   const slackError = "slackError" in normalized ? normalized.slackError ?? detailsSlackError : detailsSlackError
   const retryAfterSeconds = "retryAfterSeconds" in normalized ? normalized.retryAfterSeconds : undefined
-  const suggestion = suggestionFor(normalized._tag)
+  const detailSuggestion = typeof normalized.details.suggestion === "string" ? normalized.details.suggestion : undefined
+  const suggestion = detailSuggestion ?? suggestionFor(normalized._tag)
   const envelope: ErrorEnvelope = {
     ok: false,
     error: {
@@ -47,7 +51,7 @@ export const errorEnvelope = (error: unknown): { readonly envelope: ErrorEnvelop
       ...(retryAfterSeconds === undefined ? {} : { retry_after_seconds: retryAfterSeconds }),
       ...(suggestion === undefined ? {} : { suggestion }),
       trace_id: `slk_${randomUUID()}`,
-      ...(Object.keys(normalized.details).length === 0 ? {} : { details: normalized.details })
+      ...(Object.keys(details).length === 0 ? {} : { details })
     }
   }
   return { envelope, exitCode: normalized.exitCode }
@@ -56,7 +60,7 @@ export const errorEnvelope = (error: unknown): { readonly envelope: ErrorEnvelop
 const suggestionFor = (tag: string): string | undefined => {
   switch (tag) {
     case "NotAuthenticated":
-      return "Run agent-slack auth login or provide a seeded profile for tests."
+      return "Run agent-slack auth login, or use --token with an existing Slack bot token."
     case "MissingScope":
       return "Reinstall or reauthorize the Slack app with the missing scope."
     case "SlackRateLimited":

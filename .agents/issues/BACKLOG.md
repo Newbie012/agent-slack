@@ -147,7 +147,7 @@ tests/output/
 
 ## Tests
 
-- CLI black-box tests assert stdout is parseable JSON only.
+- CLI black-box tests assert stdout is valid JSON only.
 - Error tests assert stderr structured JSON and expected exit code.
 - NDJSON tests parse each stdout line independently.
 
@@ -212,7 +212,7 @@ tests/api/
 
 ## Goal
 
-Let operators create, inspect, and remove named Slack auth profiles.
+Let operators create, inspect, and remove named Slack profiles.
 
 ## Scope
 
@@ -231,7 +231,7 @@ tests/auth/
 - Implement token storage adapter.
 - Implement OAuth v2 localhost flow with configurable Slack OAuth base URL.
 - Support Emulate OAuth for integration tests.
-- Support seeded-token profile setup for tests.
+- Support token-seeded profiles in the TestDriver.
 
 ## Tests
 
@@ -280,7 +280,7 @@ tests/catalog/
 
 ## Tests
 
-- `agent-slack describe --json` exposes the full command tree.
+- `agent-slack describe --json` exposes the full command catalog.
 - `conversation history --help --json` includes args, flags, required scopes, and return schema.
 - `api method describe conversations.replies --json` includes pagination and safety metadata.
 

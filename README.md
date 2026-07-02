@@ -2,7 +2,7 @@
 
 # agent-slack
 
-Slack context for AI agents, exposed through the `agent-slack` CLI.
+Slack context for AI agents via the `agent-slack` CLI.
 Short alias: `aslk`.
 
 <pre align="center">npm install -g @eliya-oss/agent-slack</pre>
@@ -14,14 +14,37 @@ Short alias: `aslk`.
 ## Usage
 
 ```bash
-agent-slack auth login --oauth --client-id "$SLACK_CLIENT_ID" --client-secret "$SLACK_CLIENT_SECRET" --json
+agent-slack auth login --json
 agent-slack conversation history C123 --limit 50 --json
 agent-slack thread get --channel C123 --ts 1710000000.000100 --include users,permalinks --json
 agent-slack conversation context C123 --include users,threads,permalinks --format ndjson
 agent-slack api call conversations.info --payload '{"channel":"C123"}' --json
 ```
 
-OAuth login opens Slack in your browser. Use `--no-open` to print the URL.
+## Auth
+
+Browser login:
+
+```bash
+agent-slack auth login
+```
+
+Agent Slack opens Slack in the browser with PKCE and stores a local Slack profile. Users do not create Slack apps or handle Slack client secrets.
+
+Token setup:
+
+```bash
+agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes channels:read,channels:history,users:read
+```
+
+Developer/self-hosted fallback:
+
+1. Create a Slack app at <https://api.slack.com/apps>.
+2. Add the needed scopes under **OAuth & Permissions**.
+3. Install it to your workspace and copy the bot token.
+4. Run `agent-slack auth login --token "$SLACK_BOT_TOKEN" --scopes ...`.
+
+OAuth with `--client-id` and `--client-secret` is only for development and self-hosted setups.
 
 ## Skill
 
