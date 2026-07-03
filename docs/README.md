@@ -26,6 +26,15 @@ pnpm types:check
 
 Update `meta.json` files when adding pages to control ordering and groups. Use MDX; shared layout tweaks live in `lib/layout.shared.tsx`. The content loader is defined in `lib/source.ts` and `source.config.ts`.
 
+## Vercel
+
+Deploy this folder as the `aslk.vercel.app` project root. The docs app also
+serves the Slack app support paths:
+
+- `/oauth/slack/callback` - forwards Slack OAuth callback parameters to the local CLI.
+- `/privacy` - Slack app privacy page.
+- `/support` - Slack app support page.
+
 ## Notes for contributors
 
 - Keep examples aligned with the implemented CLI surface.
