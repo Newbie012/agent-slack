@@ -20,8 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     (() => {
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ??
-        process.env.VERCEL_URL ??
+        [
+          process.env.NEXT_PUBLIC_SITE_URL,
+          process.env.VERCEL_PROJECT_PRODUCTION_URL,
+          process.env.VERCEL_URL,
+        ].find((value) => value?.trim()) ??
         'http://localhost:8000';
       return siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`;
     })(),
