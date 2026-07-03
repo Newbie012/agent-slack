@@ -36,13 +36,13 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="home-install-command mt-10 inline-flex max-w-full items-center gap-4 overflow-x-auto rounded-md border border-fd-muted-foreground/55 bg-transparent px-5 py-4 font-mono text-base">
-            <span className="home-subtle">$</span>
-            <span className="whitespace-nowrap text-fd-foreground">
-              {installCommand}
-            </span>
-            <CopyButton text={installCommand} />
-          </div>
+          <CopyButton
+            text={setupPrompt}
+            label="Copy setup prompt for your agent"
+            copiedLabel="Copied setup prompt"
+            className="home-subtle mt-8 inline-flex items-center gap-2 font-mono text-base transition-colors hover:text-fd-foreground"
+            iconClassName="h-4 w-4"
+          />
         </div>
       </section>
 
@@ -176,7 +176,16 @@ interface GuideItem {
   href: string;
 }
 
-const installCommand = 'npm install -g @eliya-oss/agent-slack';
+const setupPrompt = `Use agent-slack when you need Slack context.
+
+Install it:
+npm install -g @eliya-oss/agent-slack
+
+Start with:
+agent-slack auth login
+agent-slack auth status --json
+
+Read Slack through structured JSON or NDJSON. Keep data on stdout, diagnostics on stderr, and respect Slack scopes and channel permissions.`;
 
 const quickStart = `agent-slack auth login
 agent-slack auth status --json
