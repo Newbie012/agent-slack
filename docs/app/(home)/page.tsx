@@ -25,22 +25,23 @@ export default function HomePage() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/docs/quick-start" className="btn-primary">
-              Run the first read
+              Get started
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link
-              href="/docs/reference/output-contract"
-              className="btn-secondary"
-            >
-              View output shapes
-            </Link>
+            <CopyButton
+              text={installCommand}
+              label={installCommand}
+              copiedLabel="Copied"
+              className="btn-outline font-mono"
+              showIcon={false}
+            />
           </div>
 
           <CopyButton
             text={setupPrompt}
             label="Copy setup prompt for your agent"
             copiedLabel="Copied setup prompt"
-            className="home-subtle mt-8 inline-flex items-center gap-2 font-mono text-base transition-colors hover:text-fd-foreground"
+            className="home-copy-prompt mt-8 inline-flex items-center gap-2 font-mono text-sm"
             iconClassName="h-4 w-4"
           />
         </div>
@@ -175,6 +176,8 @@ interface GuideItem {
   description: string;
   href: string;
 }
+
+const installCommand = 'npm i -g @eliya-oss/agent-slack';
 
 const setupPrompt = `Use agent-slack when you need Slack context.
 

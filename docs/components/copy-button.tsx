@@ -9,12 +9,14 @@ export function CopyButton({
   copiedLabel = 'Copied',
   className = 'rounded p-2 text-fd-muted-foreground transition-colors hover:bg-fd-muted-foreground/10 hover:text-fd-foreground',
   iconClassName = 'h-5 w-5',
+  showIcon = true,
 }: {
   text: string;
   label?: string;
   copiedLabel?: string;
   className?: string;
   iconClassName?: string;
+  showIcon?: boolean;
 }) {
   const [checked, onClick] = useCopyButton(() => {
     navigator.clipboard.writeText(text);
@@ -26,11 +28,13 @@ export function CopyButton({
       className={className}
       aria-label="Copy to clipboard"
     >
-      {checked ? (
-        <Check className={iconClassName} />
-      ) : (
-        <Copy className={iconClassName} />
-      )}
+      {showIcon ? (
+        checked ? (
+          <Check className={iconClassName} />
+        ) : (
+          <Copy className={iconClassName} />
+        )
+      ) : null}
       {label ? <span>{checked ? copiedLabel : label}</span> : null}
     </button>
   );

@@ -184,6 +184,15 @@ article :not(pre) > code {
   color: oklch(0.56 0.006 285);
 }
 
+.home-page .home-copy-prompt {
+  color: oklch(0.56 0.006 285);
+  transition: color 150ms ease;
+}
+
+.home-page .home-copy-prompt:hover {
+  color: var(--color-fd-foreground);
+}
+
 .home-page h1 {
   font-size: 1.875rem;
   line-height: 1.16;
@@ -262,6 +271,28 @@ article :not(pre) > code {
 }
 
 .btn-secondary:hover {
+  border-color: oklch(0.31 0.006 285);
+  background: var(--color-fd-muted);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  color: var(--color-fd-foreground);
+  border: 1px solid var(--color-fd-border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.btn-outline:hover {
   border-color: oklch(0.31 0.006 285);
   background: var(--color-fd-muted);
 }
