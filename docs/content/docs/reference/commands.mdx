@@ -1,0 +1,82 @@
+---
+title: Commands
+description: Human-readable command map for Agent Slack.
+icon: Terminal
+---
+
+A map of the command surface, grouped by what you're doing. The installed CLI is
+always authoritative. Ask it directly for the exact flags and output schema of
+any command:
+
+```bash
+agent-slack describe --json
+agent-slack <group> describe --json
+agent-slack <command> --help --json
+```
+
+## Setup and discovery
+
+| Command | Purpose |
+| --- | --- |
+| `agent-slack describe --json` | Print the command catalog. |
+| `agent-slack completion zsh` | Generate shell completion. |
+| `agent-slack api methods list --json` | List bundled Slack Web API metadata. |
+| `agent-slack api method describe conversations.history --json` | Describe one bundled Slack method. |
+
+## Authentication
+
+| Command | Purpose |
+| --- | --- |
+| `agent-slack auth login` | Connect a Slack workspace profile. |
+| `agent-slack auth status --json` | Show the active profile. |
+| `agent-slack auth scopes --json` | Show granted scopes. |
+| `agent-slack auth profiles list --json` | List local profiles. |
+| `agent-slack auth logout --profile work --yes --json` | Delete a local profile. |
+| `agent-slack auth test --json` | Call Slack `auth.test`. |
+
+## Slack reads
+
+| Command | Purpose |
+| --- | --- |
+| `agent-slack team get --json` | Show workspace details. |
+| `agent-slack team profile get --json` | Show workspace profile fields. |
+| `agent-slack enterprise get --json` | Show team or enterprise identity. |
+| `agent-slack user list --limit 50 --json` | List visible users. |
+| `agent-slack user get U123 --json` | Show one user. |
+| `agent-slack user lookup --email dev@example.com --json` | Find a user by email. |
+| `agent-slack user presence get U123 --json` | Show user presence. |
+| `agent-slack usergroups list --json` | List user groups. |
+| `agent-slack usergroups users list S123 --json` | List users in a user group. |
+| `agent-slack conversation list --json` | List visible conversations. |
+| `agent-slack conversation get C123 --json` | Show one conversation. |
+| `agent-slack conversation members C123 --json` | List conversation members. |
+| `agent-slack conversation history C123 --json` | Read channel history. |
+| `agent-slack conversation context C123 --include users,threads --json` | Build agent context. |
+| `agent-slack thread get --channel C123 --ts 1710000000.000100 --json` | Read a complete thread. |
+| `agent-slack message get --channel C123 --ts 1710000000.000100 --json` | Read one message. |
+| `agent-slack message permalink --channel C123 --ts 1710000000.000100 --json` | Get a Slack permalink. |
+| `agent-slack search context --query "project atlas" --json` | Search for agent context. |
+| `agent-slack search messages --query "project atlas" --json` | Search messages. |
+| `agent-slack search files --query "project atlas" --json` | Search files. |
+| `agent-slack file list --channel C123 --json` | List visible files. |
+| `agent-slack file get F123 --json` | Show file metadata. |
+| `agent-slack file download F123 --out ./artifact.pdf --json` | Download a file. |
+| `agent-slack reaction get --channel C123 --ts 1710000000.000100 --json` | Read reactions on an item. |
+| `agent-slack pin list C123 --json` | List pinned items. |
+| `agent-slack bookmark list C123 --json` | List channel bookmarks. |
+| `agent-slack emoji list --json` | List custom emoji. |
+| `agent-slack dnd status --json` | Show DND status. |
+
+## Direct Web API
+
+```bash
+agent-slack api call conversations.history \
+  --payload '{"channel":"C123","limit":20}' \
+  --json
+```
+
+Known write, destructive, and admin calls require:
+
+```bash
+--allow-write --yes
+```

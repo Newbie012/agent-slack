@@ -1,0 +1,96 @@
+---
+title: Web API
+description: Call Slack Web API methods directly.
+icon: Cable
+---
+
+Use `api call` when Agent Slack lacks a wrapper command.
+
+## List bundled method metadata
+
+```bash
+agent-slack api methods list --json
+agent-slack api methods list --family conversations --json
+```
+
+Describe one bundled method:
+
+```bash
+agent-slack api method describe conversations.history --json
+```
+
+The bundled catalog includes safety, scopes, pagination, and item-key metadata for known methods.
+
+## Call a method
+
+Inline payload:
+
+```bash
+agent-slack api call conversations.history \
+  --payload '{"channel":"C123","limit":20}' \
+  --json
+```
+
+Payload from a file:
+
+```bash
+agent-slack api call conversations.history --payload @payload.json --json
+```
+
+Payload from stdin:
+
+```bash
+cat payload.json | agent-slack api call conversations.history - --json
+```
+
+Empty payload:
+
+```bash
+agent-slack api call auth.test --json
+```
+
+## Raw response
+
+```bash
+agent-slack api call conversations.history \
+  --payload '{"channel":"C123","limit":20}' \
+  --raw
+```
+
+Without `--raw`, Agent Slack wraps the Slack response in its standard envelope.
+
+## Pagination
+
+For cataloged cursor-paginated methods, use:
+
+```bash
+agent-slack api call conversations.history \
+  --payload '{"channel":"C123","limit":100}' \
+  --all \
+  --format ndjson
+```
+
+## Unsafe methods
+
+Known write, destructive, and admin methods are blocked by default.
+
+Examples include:
+
+```
+chat.postMessage
+chat.delete
+files.delete
+admin.*
+```
+
+To intentionally allow one:
+
+```bash
+agent-slack api call chat.postMessage \
+  --payload '{"channel":"C123","text":"hello"}' \
+  --allow-write \
+  --yes \
+  --json
+```
+
+Only use this when a human operator has approved the write.

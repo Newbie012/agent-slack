@@ -1,0 +1,6 @@
+{
+  "title": "Recipes",
+  "icon": "ChefHat",
+  "defaultOpen": false,
+  "pages": ["agent-workflows", "headless-auth"]
+}

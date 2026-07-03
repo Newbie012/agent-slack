@@ -1,0 +1,104 @@
+---
+title: Authentication
+description: Connect Slack profiles and inspect granted scopes.
+icon: KeyRound
+---
+
+Agent Slack uses named local profiles. The default profile name is `default`.
+
+## Browser login
+
+```bash
+agent-slack auth login
+```
+
+Browser login uses Slack OAuth with PKCE and the bundled Agent Slack public Client ID. It requests user scopes and stores the returned token locally.
+
+Useful options:
+
+```bash
+agent-slack auth login --profile work
+agent-slack auth login --no-open
+agent-slack auth login --auth-url-out /tmp/agent-slack-auth-url
+agent-slack auth login --timeout-ms 180000
+```
+
+## Existing bot token
+
+```bash
+agent-slack auth login \
+  --profile work \
+  --token "$SLACK_BOT_TOKEN" \
+  --scopes channels:read,channels:history,users:read \
+  --json
+```
+
+Or pass a token through an environment variable:
+
+```bash
+AGENT_SLACK_TOKEN
+SLK_TOKEN
+SLACK_BOT_TOKEN
+```
+
+## Self-hosted OAuth
+
+Use this for development or your own Slack app credentials:
+
+```bash
+agent-slack auth login \
+  --oauth \
+  --client-id "$SLACK_CLIENT_ID" \
+  --client-secret "$SLACK_CLIENT_SECRET" \
+  --scopes channels:read,channels:history \
+  --json
+```
+
+OAuth credential environment variables:
+
+```bash
+AGENT_SLACK_CLIENT_ID
+AGENT_SLACK_PUBLIC_CLIENT_ID
+SLK_CLIENT_ID
+SLACK_CLIENT_ID
+
+AGENT_SLACK_CLIENT_SECRET
+SLK_CLIENT_SECRET
+SLACK_CLIENT_SECRET
+```
+
+## Profiles
+
+```bash
+agent-slack auth status --profile work --json
+agent-slack auth scopes --profile work --json
+agent-slack auth profiles list --json
+```
+
+Delete a profile:
+
+```bash
+agent-slack auth logout --profile work --yes --json
+```
+
+`logout` is destructive and requires `--yes`.
+
+## Token type
+
+Commands use the bot token when present, and fall back to the user token otherwise.
+
+Be explicit when needed:
+
+```bash
+agent-slack conversation history C123 --token user --json
+agent-slack api call auth.test --token bot --json
+```
+
+Valid token types:
+
+```
+user
+bot
+admin
+app
+```

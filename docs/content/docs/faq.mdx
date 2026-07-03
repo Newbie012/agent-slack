@@ -1,0 +1,60 @@
+---
+title: FAQ
+description: Practical questions about running Agent Slack.
+icon: CircleQuestionMark
+---
+
+## Do I need to create a Slack app?
+
+No. `agent-slack auth login` uses a bundled public Slack app and PKCE, so the
+default flow works with nothing but a browser. You only need your own app
+credentials for [self-hosted OAuth](/docs/authentication#self-hosted-oauth) or
+development against a specific app.
+
+## Can I use it across multiple workspaces?
+
+Yes. Each login becomes a named profile. Create one per workspace and select it
+with `--profile`:
+
+```bash
+agent-slack auth login --profile acme
+agent-slack conversation history C123 --profile acme --json
+```
+
+## Why a CLI instead of an MCP server or a browser tool?
+
+A CLI is the smallest stable surface an agent can call: one binary, deterministic
+JSON in and out, real exit codes, and no session state to manage. It runs the
+same from a shell, a script, a CI job, or inside an agent's tool loop, and
+you can pipe it, log it, and diff it like any other command.
+
+## Does it work in CI or on a headless server?
+
+Yes. Non-TTY stdout defaults to JSON, and you can authenticate without a browser
+using an existing token or the printed OAuth URL. See
+[Headless Auth](/docs/recipes/headless-auth).
+
+## A command returns nothing. Is it broken?
+
+Probably not. It's likely the [Slack boundary](/docs#the-slack-boundary).
+Check the active profile and its scopes with `agent-slack auth status --json`,
+confirm the token type is right for the data (`--token user` vs `--token bot`),
+and make sure the user or bot can actually see that conversation. Real failures
+come back as [typed errors](/docs/reference/troubleshooting), not empty output.
+
+## Can it post or delete messages?
+
+Not through convenience commands. The product is read-first. The generic
+`api call` command blocks known write, destructive, and admin methods unless an
+operator explicitly passes `--allow-write --yes`.
+
+## Where are my tokens stored?
+
+In a local profile store outside your project, by default
+`~/.config/agent-slack/profiles.json`. On macOS you can move the secrets into
+Keychain with `AGENT_SLACK_TOKEN_STORE=keychain`.
+
+## Is this affiliated with Slack?
+
+No. Agent Slack is not created by, affiliated with, or supported by Slack
+Technologies, Inc.

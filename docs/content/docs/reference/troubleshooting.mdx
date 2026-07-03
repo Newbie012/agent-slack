@@ -1,0 +1,152 @@
+---
+title: Troubleshooting
+description: Common Agent Slack failures and what to check.
+icon: Wrench
+---
+
+## No profile found
+
+Error type:
+
+```
+NotAuthenticated
+```
+
+Fix:
+
+```bash
+agent-slack auth login
+```
+
+Or check the profile name:
+
+```bash
+agent-slack auth profiles list --json
+agent-slack auth status --profile work --json
+```
+
+## Missing scope
+
+Error type:
+
+```
+MissingScope
+```
+
+Slack returned `missing_scope`. Reauthorize with the scope required by the command.
+
+Check current scopes:
+
+```bash
+agent-slack auth scopes --json
+```
+
+## Invalid or inactive token
+
+Error type:
+
+```
+PermissionDenied
+```
+
+Common Slack errors include:
+
+```
+invalid_auth
+not_authed
+account_inactive
+```
+
+Run:
+
+```bash
+agent-slack auth test --json
+```
+
+Then log in again if needed.
+
+## Cannot see a channel or thread
+
+Agent Slack cannot bypass Slack access rules.
+
+Check:
+
+- The active profile is the one you expect.
+- The token type is correct: `--token user` or `--token bot`.
+- The token has the needed history scope.
+- The user or bot is allowed to see the conversation.
+- The channel ID and message timestamp are exact.
+
+## Rate limited
+
+Error type:
+
+```
+SlackRateLimited
+```
+
+Exit code:
+
+```
+6
+```
+
+If Slack provides a retry delay, Agent Slack includes `retry_after_seconds`.
+
+Use smaller reads:
+
+```bash
+agent-slack conversation history C123 --limit 20 --json
+```
+
+## Invalid payload
+
+Error type:
+
+```
+InvalidPayload
+```
+
+`api call` payloads must be JSON objects.
+
+Valid:
+
+```bash
+agent-slack api call conversations.history --payload '{"channel":"C123"}' --json
+```
+
+Invalid:
+
+```bash
+agent-slack api call conversations.history --payload '[]' --json
+```
+
+## Unsafe method blocked
+
+Error type:
+
+```
+UnsafeMethodBlocked
+```
+
+Agent Slack blocks known write, destructive, and admin calls by default.
+
+Only proceed with explicit operator approval:
+
+```bash
+agent-slack api call chat.postMessage \
+  --payload '{"channel":"C123","text":"hello"}' \
+  --allow-write \
+  --yes \
+  --json
+```
+
+## Get command metadata
+
+When in doubt, inspect the CLI itself:
+
+```bash
+agent-slack describe --json
+agent-slack conversation describe --json
+agent-slack api methods list --json
+```

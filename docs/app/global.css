@@ -1,0 +1,320 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+@import 'fumadocs-twoslash/twoslash.css';
+
+/* ============================================
+   Clean, Content-First Theme
+   Neutral docs shell. The project logo carries the Slack-adjacent color cue;
+   the interface itself stays mostly monochrome.
+   ============================================ */
+
+:root {
+  /* Dark mode - subtle warm dark */
+  --color-fd-background: oklch(0.145 0.006 285);
+  --color-fd-foreground: oklch(0.9 0.004 285);
+  --color-fd-muted: oklch(0.185 0.006 285);
+  --color-fd-muted-foreground: oklch(0.48 0.006 285);
+  --color-fd-popover: oklch(0.16 0.006 285);
+  --color-fd-popover-foreground: oklch(0.88 0.004 285);
+  --color-fd-card: oklch(0.165 0.006 285);
+  --color-fd-card-foreground: oklch(0.9 0.004 285);
+  --color-fd-border: oklch(0.215 0.006 285);
+
+  --color-fd-primary: oklch(0.8 0.006 285);
+  --color-fd-primary-foreground: oklch(0.145 0.006 285);
+  --color-fd-primary-hover: oklch(0.74 0.006 285);
+
+  --color-fd-secondary: oklch(0.185 0.006 285);
+  --color-fd-secondary-foreground: oklch(0.58 0.006 285);
+
+  --color-fd-accent: oklch(0.185 0.006 285);
+  --color-fd-accent-foreground: oklch(0.84 0.004 285);
+
+  --color-fd-ring: oklch(0.56 0.008 285);
+}
+
+.light {
+  --color-fd-background: oklch(1 0 0);
+  --color-fd-foreground: oklch(0.14 0.01 285);
+  --color-fd-muted: oklch(0.96 0.005 285);
+  --color-fd-muted-foreground: oklch(0.5 0.01 285);
+  --color-fd-popover: oklch(1 0 0);
+  --color-fd-popover-foreground: oklch(0.18 0.01 285);
+  --color-fd-card: oklch(0.98 0.003 285);
+  --color-fd-card-foreground: oklch(0.18 0.01 285);
+  --color-fd-border: oklch(0.9 0.005 285);
+  --color-fd-primary: oklch(0.18 0.01 285);
+  --color-fd-primary-foreground: oklch(1 0 0);
+  --color-fd-primary-hover: oklch(0.28 0.01 285);
+  --color-fd-secondary: oklch(0.96 0.005 285);
+  --color-fd-secondary-foreground: oklch(0.18 0.01 285);
+  --color-fd-accent: oklch(0.96 0.005 285);
+  --color-fd-accent-foreground: oklch(0.18 0.01 285);
+  --color-fd-ring: oklch(0.55 0.01 285);
+}
+
+/* ============================================
+   Base Styles - Clean & Functional
+   ============================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-feature-settings:
+    'liga' 1,
+    'calt' 1;
+  font-size: 0.9375rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+h1 {
+  font-size: 1.875rem;
+  line-height: 1.18;
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.45;
+}
+
+h3 {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  h1 {
+    font-size: 2.125rem;
+  }
+}
+
+/* Docs prose - keep article hierarchy clear without heavy weights. */
+article h1,
+article h2,
+article h3,
+article h4,
+article h5,
+article h6 {
+  color: var(--color-fd-foreground);
+  font-weight: 500;
+}
+
+article h1 {
+  font-size: 2rem;
+  line-height: 1.18;
+}
+
+article h2 {
+  font-size: 1.35rem;
+  line-height: 1.35;
+}
+
+article h3 {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+article p,
+article li {
+  color: oklch(0.58 0.006 285);
+  font-weight: 400;
+}
+
+article strong {
+  color: oklch(0.86 0.004 285);
+  font-weight: 500;
+}
+
+article a {
+  color: oklch(0.86 0.004 285);
+  font-weight: 400;
+}
+
+article blockquote,
+article blockquote p {
+  color: oklch(0.54 0.006 285);
+}
+
+article :not(pre) > code {
+  color: oklch(0.82 0.004 285);
+  font-weight: 400;
+}
+
+@media (min-width: 768px) {
+  article h1 {
+    font-size: 2.4rem;
+  }
+}
+
+/* Homepage copy is a touch brighter than docs prose for a stronger landing page. */
+.home-page .home-muted {
+  color: oklch(0.65 0.006 285);
+}
+
+.home-page .home-subtle {
+  color: oklch(0.56 0.006 285);
+}
+
+.home-page h1 {
+  font-size: 2rem;
+  line-height: 1.16;
+}
+
+.home-page h2 {
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+.home-page h3 {
+  font-size: 0.975rem;
+  line-height: 1.45;
+}
+
+@media (min-width: 768px) {
+  .home-page h1 {
+    font-size: 2.65rem;
+  }
+}
+
+/* Inline code - subtle styling */
+:not(pre) > code {
+  background: var(--color-fd-muted);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875em;
+  font-weight: 450;
+}
+
+/* ============================================
+   Buttons - Simple, no glow
+   ============================================ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: oklch(0.8 0.006 285) !important;
+  color: oklch(0.145 0.006 285) !important;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 150ms ease;
+}
+
+.btn-primary:hover {
+  background: oklch(0.74 0.006 285) !important;
+}
+
+.light .btn-primary {
+  background: oklch(0.18 0.01 285) !important;
+  color: oklch(1 0 0) !important;
+}
+
+.light .btn-primary:hover {
+  background: oklch(0.28 0.01 285) !important;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--color-fd-secondary);
+  color: var(--color-fd-secondary-foreground);
+  border: 1px solid var(--color-fd-border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.btn-secondary:hover {
+  border-color: oklch(0.31 0.006 285);
+  background: var(--color-fd-muted);
+}
+
+/* ============================================
+   Cards - Clean borders, subtle hover
+   ============================================ */
+.feature-card {
+  background: var(--color-fd-card);
+  border: 1px solid var(--color-fd-border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  transition: border-color 150ms ease;
+}
+
+.feature-card:hover {
+  border-color: oklch(0.3 0.006 285);
+}
+
+/* ============================================
+   Code blocks - clean, no shadows
+   ============================================ */
+figure.shiki,
+.shiki {
+  box-shadow: none !important;
+  --tw-shadow: none !important;
+  --tw-inset-shadow: none !important;
+}
+
+/* Remove border from inner pre when inside figure */
+figure.shiki pre,
+figure pre {
+  border: none !important;
+}
+
+/* ============================================
+   Selection
+   ============================================ */
+::selection {
+  background: oklch(0.65 0.01 285 / 0.25);
+}
+
+/* ============================================
+   Scrollbar - subtle
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-fd-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fd-muted-foreground);
+}
+
+/* ============================================
+   Reduced motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

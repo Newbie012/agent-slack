@@ -1,0 +1,117 @@
+---
+title: Reading Slack Context
+description: Commands for conversations, threads, users, files, and Slack objects.
+icon: MessagesSquare
+---
+
+Agent Slack commands are noun-first and read-first.
+
+Use `--json` for stable machine-readable output. Non-TTY stdout also defaults to JSON.
+
+## Workspace
+
+```bash
+agent-slack auth test --json
+agent-slack team get --json
+agent-slack team profile get --json
+agent-slack enterprise get --json
+```
+
+## Users
+
+```bash
+agent-slack user list --limit 50 --json
+agent-slack user get U123 --json
+agent-slack user lookup --email dev@example.com --json
+agent-slack user presence get U123 --json
+```
+
+User groups:
+
+```bash
+agent-slack usergroups list --json
+agent-slack usergroups users list S123 --json
+```
+
+## Conversations
+
+```bash
+agent-slack conversation list --types public_channel,private_channel,mpim,im --json
+agent-slack conversation get C123 --json
+agent-slack conversation members C123 --limit 100 --json
+agent-slack conversation history C123 --limit 20 --json
+```
+
+History supports Slack timestamp bounds:
+
+```bash
+agent-slack conversation history C123 \
+  --oldest 1710000000.000000 \
+  --latest 1710100000.000000 \
+  --inclusive \
+  --json
+```
+
+It also supports relative windows:
+
+```bash
+agent-slack conversation history C123 --since 24h --json
+agent-slack conversation history C123 --since 7d --json
+```
+
+## Agent context
+
+```bash
+agent-slack conversation context C123 \
+  --since 24h \
+  --include users,threads,permalinks \
+  --json
+```
+
+Today, `--include` accepts:
+
+```
+users
+threads
+permalinks
+```
+
+`conversation context` reads channel history first. When requested, it hydrates users, replies, and permalinks with additional Slack API calls.
+
+## Threads and messages
+
+```bash
+agent-slack thread get --channel C123 --ts 1710000000.000100 --json
+agent-slack message get --channel C123 --ts 1710000000.000100 --json
+agent-slack message permalink --channel C123 --ts 1710000000.000100 --json
+```
+
+## Search
+
+```bash
+agent-slack search context --query "project atlas" --json
+agent-slack search messages --query "project atlas" --json
+agent-slack search files --query "project atlas" --json
+```
+
+`search context` maps to Slack's assistant search context method. Availability depends on Slack API support and scopes.
+
+## Files
+
+```bash
+agent-slack file list --channel C123 --limit 20 --json
+agent-slack file list --user U123 --json
+agent-slack file get F123 --json
+agent-slack file download F123 --out ./artifact.pdf --json
+```
+
+## Other Slack objects
+
+```bash
+agent-slack reaction get --channel C123 --ts 1710000000.000100 --json
+agent-slack pin list C123 --json
+agent-slack bookmark list C123 --json
+agent-slack emoji list --json
+agent-slack dnd status --json
+agent-slack dnd status U123 --json
+```

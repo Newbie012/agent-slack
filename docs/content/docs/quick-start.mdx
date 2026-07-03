@@ -1,0 +1,131 @@
+---
+title: Quick Start
+description: Connect Slack and read your first thread as JSON.
+icon: Zap
+---
+
+Go from install to a thread your agent can read in about five minutes. You need
+Node.js 22+ and a Slack workspace you can authorize.
+
+## 1. Install
+
+```bash
+npm install -g @eliya-oss/agent-slack
+```
+
+This installs two binaries: `agent-slack` and the short alias `aslk`.
+
+## 2. Log in
+
+```bash
+agent-slack auth login
+```
+
+This opens Slack in your browser (OAuth with PKCE), asks you to approve access,
+and stores a local profile. No token ever touches your project files.
+
+<Callout type="info">
+  On a machine with no browser, like a remote box or a CI runner, see
+  [Headless Auth](/docs/recipes/headless-auth) for `--no-open` and
+  `--auth-url-out`.
+</Callout>
+
+## 3. Confirm what your token can see
+
+Before reading anything, check the identity and scopes on the active profile:
+
+```bash
+agent-slack auth status --json
+```
+
+```json
+{
+  "ok": true,
+  "method": "auth.status",
+  "team_id": "T123",
+  "enterprise_id": null,
+  "profile": "default",
+  "data": {
+    "name": "default",
+    "userId": "U123",
+    "tokenType": "user",
+    "scopes": ["channels:read", "channels:history", "users:read"],
+    "hasUserToken": true,
+    "hasBotToken": false
+  },
+  "warnings": []
+}
+```
+
+If a later command fails with `MissingScope`, this is where you'll spot the gap.
+
+## 4. Find a conversation
+
+List the channels and DMs the token can see, then grab an ID:
+
+```bash
+agent-slack conversation list --limit 20 --json
+```
+
+Private channels, DMs, and group DMs only appear if Slack lets the active token
+see them. The [Slack boundary](/docs#the-slack-boundary) applies here too.
+
+## 5. Read channel history
+
+```bash
+agent-slack conversation history C123 --since 24h --json
+```
+
+`--since 24h` is a relative window; `--since 7d` and Slack timestamp bounds
+(`--oldest` / `--latest`) work too. Every read returns the same
+[envelope](/docs/reference/output-contract), with paging info when there's more.
+
+## 6. Read a full thread
+
+Most agent workflows lean on this command. Pass the channel and the root message
+timestamp, and pull in the referenced users and permalinks in one call:
+
+```bash
+agent-slack thread get \
+  --channel C123 \
+  --ts 1710000000.000100 \
+  --include users,permalinks \
+  --json
+```
+
+## 7. Build context for an agent
+
+`conversation context` is the summarization-ready read: it fetches history, then
+hydrates users, thread replies, and permalinks into one deterministic payload.
+Stream it as NDJSON (one item per line) when you're piping into an agent:
+
+```bash
+agent-slack conversation context C123 \
+  --since 24h \
+  --include users,threads,permalinks \
+  --format ndjson
+```
+
+## 8. Search when you don't know the channel
+
+```bash
+agent-slack search context --query "project atlas" --json
+```
+
+`search context` maps to Slack's Real-time Search API. Use it to locate the right
+thread, then read it with `thread get`.
+
+<Callout type="tip">
+  Stuck on which command or flag to use? The CLI describes itself:
+  `agent-slack describe --json`, `agent-slack conversation describe --json`, and
+  `<command> --help --json` all emit machine-readable metadata.
+</Callout>
+
+## Next steps
+
+<Cards>
+  <Card title="Reading Slack Context" href="/docs/guides/reading-slack-context" />
+  <Card title="Agent Workflows" href="/docs/recipes/agent-workflows" />
+  <Card title="Output Contract" href="/docs/reference/output-contract" />
+  <Card title="Authentication" href="/docs/authentication" />
+</Cards>

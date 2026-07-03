@@ -1,0 +1,6 @@
+{
+  "title": "Guides",
+  "icon": "BookMarked",
+  "defaultOpen": true,
+  "pages": ["reading-slack-context"]
+}

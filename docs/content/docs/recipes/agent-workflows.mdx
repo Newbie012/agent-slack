@@ -1,0 +1,94 @@
+---
+title: Agent Workflows
+description: End-to-end patterns for wiring Slack context into an agent.
+icon: Bot
+---
+
+These are complete flows, not single commands. Each one shows how the pieces fit
+together and why. For the full command surface, see
+[Reading Slack Context](/docs/guides/reading-slack-context).
+
+## Answer a question when you don't know the channel
+
+The most common agent task: someone asks "what's the latest on project atlas?"
+and the agent has to find the conversation before it can read it. Search first,
+then read the thread it points you to.
+
+```bash
+# 1. Find candidates across messages and files
+agent-slack search context --query "project atlas" --content-types messages,files --json
+
+# 2. Read the thread the top hit belongs to
+agent-slack thread get --channel C123 --ts 1710000000.000100 --include users,permalinks --json
+```
+
+`search context` returns matches with their channel and timestamp, which is
+exactly what `thread get` needs. Passing `--include users` means the agent gets
+display names inline instead of raw `U…` IDs.
+
+## Summarize a channel's last day
+
+To summarize activity, give the agent one deterministic bundle rather than making
+it stitch together separate history, replies, and user calls. That's what
+`conversation context` is for.
+
+```bash
+agent-slack conversation context C123 \
+  --since 24h \
+  --include users,threads,permalinks \
+  --format ndjson
+```
+
+`conversation context` reads history, then hydrates the referenced users, thread
+replies, and permalinks into a single payload. NDJSON streams one item per line,
+which is friendlier for feeding into a model incrementally. The CLI returns the
+context; your agent writes the summary.
+
+## Hand a file's contents to an agent
+
+Agents often need the attachment, not just a link to it. List files in a channel,
+then download the one you want to a path the agent can open.
+
+```bash
+# 1. See what's attached
+agent-slack file list --channel C123 --limit 20 --json
+
+# 2. Download it locally
+agent-slack file download F123 --out ./artifact.pdf --json
+```
+
+Downloads go through the authenticated token, so they respect the same
+[Slack boundary](/docs#the-slack-boundary) as every other read.
+
+## Reach a Slack method with no wrapper yet
+
+The convenience commands cover common reads, but not every Slack Web API method
+has one. `api call` gives an agent the full read surface with the same envelope.
+
+```bash
+# Discover what's available
+agent-slack api methods list --family conversations --json
+agent-slack api method describe conversations.history --json
+
+# Call it directly
+agent-slack api call conversations.history \
+  --payload '{"channel":"C123","limit":50}' \
+  --json
+```
+
+Write, destructive, and admin methods stay blocked here unless an operator adds
+`--allow-write --yes`. See [Web API](/docs/reference/web-api) for the details.
+
+## Let the agent learn the CLI at runtime
+
+Rather than hard-coding command knowledge into a prompt, let the agent introspect
+the CLI. Every group and command emits machine-readable metadata.
+
+```bash
+agent-slack describe --json                 # the whole command catalog
+agent-slack conversation describe --json    # one group's commands
+agent-slack thread get --help --json        # one command's flags and schema
+```
+
+This keeps an agent's understanding of the tool in sync with the installed
+version instead of a doc it might have memorized.

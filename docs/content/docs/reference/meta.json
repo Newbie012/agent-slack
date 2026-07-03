@@ -1,0 +1,6 @@
+{
+  "title": "Reference",
+  "icon": "Code",
+  "defaultOpen": true,
+  "pages": ["output-contract", "web-api", "commands", "troubleshooting"]
+}

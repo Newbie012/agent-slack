@@ -1,0 +1,78 @@
+---
+title: Installation
+description: Install and verify the Agent Slack CLI.
+icon: Download
+---
+
+Agent Slack is published as `@eliya-oss/agent-slack`.
+
+## Requirements
+
+- Node.js 22 or newer
+- A Slack workspace you can authorize
+- Slack scopes for the data you want to read
+
+## Install
+
+<Tabs groupId="package-manager" items={['npm', 'pnpm', 'yarn']} persist>
+  <Tab value="npm">
+
+```bash
+npm install -g @eliya-oss/agent-slack
+```
+
+  </Tab>
+  <Tab value="pnpm">
+
+```bash
+pnpm add -g @eliya-oss/agent-slack
+```
+
+  </Tab>
+  <Tab value="yarn">
+
+```bash
+yarn global add @eliya-oss/agent-slack
+```
+
+  </Tab>
+</Tabs>
+
+Verify the binary:
+
+```bash
+agent-slack describe --json
+```
+
+Or use the short alias:
+
+```bash
+aslk describe --json
+```
+
+## Shell completion
+
+```bash
+agent-slack completion zsh > ~/.zfunc/_agent-slack
+agent-slack completion bash
+```
+
+## Local token storage
+
+By default, profiles are stored under:
+
+```
+~/.config/agent-slack/profiles.json
+```
+
+On macOS, store token secrets in Keychain:
+
+```bash
+AGENT_SLACK_TOKEN_STORE=keychain agent-slack auth login
+```
+
+Profile metadata still lives under the Agent Slack config directory.
+
+## Next step
+
+Continue to [Quick Start](/docs/quick-start).

@@ -1,0 +1,72 @@
+---
+title: Introduction
+description: Slack context for AI agents, through a predictable, permission-bounded CLI.
+icon: BookOpen
+---
+
+`agent-slack` is a read-first Slack CLI built for AI agents. A human logs in
+once, and the agent reads Slack context (threads, channels, users, files,
+reactions, and search) as structured JSON it can parse directly.
+
+Its short alias is `aslk`. Both names run the same commands.
+
+## The problem it solves
+
+Agents keep needing Slack. The decision is in a thread, the incident timeline is
+in `#ops`, the spec someone promised is a file in a DM. Getting that context to
+an agent usually means one of two bad options:
+
+- **Point a browser tool at the Slack web UI.** Slack's interface is built for
+  people, not machines. Output is non-deterministic, formatting gets mangled,
+  pagination is guesswork, and there is no clean way to signal "you don't have
+  access to that."
+- **Wire up the raw Slack Web API yourself.** Now you own OAuth, PKCE, the
+  difference between user/bot/admin/app tokens, per-method scopes, cursor
+  pagination, rate-limit backoff, and a different response shape for every
+  method.
+
+`agent-slack` does that plumbing once. You get noun-verb commands
+(`conversation history`, `thread get`, `search context`) that always return the
+same [envelope](/docs/reference/output-contract), so an agent can parse the
+result without scraping terminal prose. Ask your agent to summarize `#incidents`
+overnight or catch you up on a thread: `agent-slack` hands it the clean,
+permission-bounded context, and the agent does the reasoning.
+
+## The Slack boundary
+
+There is no Slack token that means "read all of Slack." `agent-slack` never
+pretends otherwise. Every read is bounded by the active token, its granted
+scopes, workspace and channel membership, your Slack plan, and admin policy.
+
+When something is out of reach, the CLI says so with a
+[typed error](/docs/reference/troubleshooting). A missing scope or a private
+channel you can't see comes back as `MissingScope` or `PermissionDenied`, not a
+silently empty list. That honesty is the point: an agent can tell "there's
+nothing here" apart from "you weren't allowed to look."
+
+## Who this is for
+
+- Developers wiring Slack context into coding or runtime agents.
+- Anyone who wants Slack reads in a script or CI job as parseable JSON.
+- Operators who need to inspect a workspace from the terminal and see exactly
+  what a token can and can't access.
+
+## Not a fit if
+
+- **You need to post, edit, or delete in Slack.** `agent-slack` is read-first.
+  Write and admin methods are blocked unless an operator explicitly opts in with
+  `--allow-write --yes`, and there are no convenience commands for them.
+- **You need real-time events or a reactive bot.** `agent-slack` reads on
+  demand. It does not subscribe to the Events API or react to messages as they
+  arrive.
+- **You want to bypass Slack's permissions.** It can't, and won't.
+
+## Next steps
+
+<Cards>
+  <Card title="Installation" href="/docs/installation" />
+  <Card title="Quick Start" href="/docs/quick-start" />
+  <Card title="Authentication" href="/docs/authentication" />
+  <Card title="Reading Slack Context" href="/docs/guides/reading-slack-context" />
+  <Card title="Output Contract" href="/docs/reference/output-contract" />
+</Cards>

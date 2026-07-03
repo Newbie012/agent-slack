@@ -1,0 +1,105 @@
+---
+title: Output Contract
+description: JSON, NDJSON, paging, fields, and structured errors.
+icon: Braces
+---
+
+Agent Slack separates data from diagnostics.
+
+- Success output goes to stdout.
+- Errors go to stderr.
+- Use `--json` for pretty JSON.
+- Use `--format ndjson` for newline-delimited item streams.
+- Non-TTY stdout defaults to JSON.
+
+## Success envelope
+
+```json
+{
+  "ok": true,
+  "method": "conversations.history",
+  "team_id": "T123",
+  "enterprise_id": null,
+  "profile": "work",
+  "data": {},
+  "paging": {
+    "next_cursor": null,
+    "has_more": false
+  },
+  "warnings": []
+}
+```
+
+## Paging
+
+Cursor-paginated Slack methods expose paging in the envelope:
+
+```json
+{
+  "next_cursor": "dXNlcjpVMDYxTkZUVDI=",
+  "has_more": true
+}
+```
+
+Use `--all` to collect up to 100 pages for supported methods:
+
+```bash
+agent-slack conversation history C123 --all --json
+```
+
+Use NDJSON to stream one record per collected item:
+
+```bash
+agent-slack conversation history C123 --all --format ndjson
+```
+
+## Field projection
+
+Use `--fields` to keep selected paths from `data`:
+
+```bash
+agent-slack auth status --fields name,teamId,scopes --json
+agent-slack conversation history C123 --fields messages.0.text --json
+```
+
+## Raw Slack response
+
+`api call` and other Slack method calls support `--raw`:
+
+```bash
+agent-slack api call conversations.history \
+  --payload '{"channel":"C123","limit":5}' \
+  --raw
+```
+
+`--raw` prints Slack's response body without the Agent Slack envelope.
+
+## Error envelope
+
+JSON errors are written to stderr:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "type": "MissingScope",
+    "title": "Slack method is missing required scope",
+    "slack_error": "missing_scope",
+    "retriable": false,
+    "suggestion": "Reinstall or reauthorize the Slack app with the missing scope.",
+    "trace_id": "slk_..."
+  }
+}
+```
+
+## Exit codes
+
+```
+0 success
+1 runtime or Slack API failure
+2 usage, validation, invalid payload, or unsupported method metadata
+3 resource not found
+4 auth, permission, or missing scope
+5 unsafe method blocked
+6 Slack rate limit
+```

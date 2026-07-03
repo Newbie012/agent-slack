@@ -1,0 +1,52 @@
+---
+title: Headless Auth
+description: Authenticate from shells, remote machines, and agent workflows.
+icon: KeyRound
+---
+
+## Print the OAuth URL
+
+Use this when the process cannot open a browser:
+
+```bash
+agent-slack auth login --no-open
+```
+
+Open the printed URL in a browser, approve Slack access, and let the local callback finish the login.
+
+## Write the OAuth URL to a file
+
+```bash
+agent-slack auth login --auth-url-out /tmp/agent-slack-auth-url --no-open
+cat /tmp/agent-slack-auth-url
+```
+
+Use this when an agent must hand the URL to a human operator.
+
+## Use an existing token
+
+```bash
+agent-slack auth login \
+  --profile ci \
+  --token "$SLACK_BOT_TOKEN" \
+  --scopes channels:read,channels:history,users:read \
+  --json
+```
+
+This stores the token as a local profile.
+
+## Use Keychain on macOS
+
+```bash
+AGENT_SLACK_TOKEN_STORE=keychain agent-slack auth login --profile work
+```
+
+Profile metadata still lives in the Agent Slack config directory; token secrets move to Keychain.
+
+## Verify before handing off to an agent
+
+```bash
+agent-slack auth status --profile work --json
+agent-slack auth scopes --profile work --json
+agent-slack auth test --profile work --json
+```
