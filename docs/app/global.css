@@ -10,6 +10,12 @@
    ============================================ */
 
 :root {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, 'Liberation Mono', monospace;
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
+
   /* Dark mode - subtle warm dark */
   --color-fd-background: oklch(0.145 0.006 285);
   --color-fd-foreground: oklch(0.9 0.004 285);
@@ -62,12 +68,21 @@ html {
 }
 
 body {
+  font-family: var(--font-sans);
   font-feature-settings:
     'liga' 1,
     'calt' 1;
   font-size: 0.9375rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+kbd,
+samp,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
 }
 
 /* Typography */
@@ -170,12 +185,12 @@ article :not(pre) > code {
 }
 
 .home-page h1 {
-  font-size: 2rem;
+  font-size: 1.875rem;
   line-height: 1.16;
 }
 
 .home-page h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1.35;
 }
 
@@ -186,7 +201,7 @@ article :not(pre) > code {
 
 @media (min-width: 768px) {
   .home-page h1 {
-    font-size: 2.65rem;
+    font-size: 2.35rem;
   }
 }
 
