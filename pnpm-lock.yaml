@@ -91,9 +91,6 @@ importers:
         specifier: ^0.3.6
         version: 0.3.9(typescript@5.9.3)
     devDependencies:
-      '@eliya-oss/agent-slack':
-        specifier: link:..
-        version: link:..
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.3.2

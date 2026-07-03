@@ -36,11 +36,11 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-9 inline-flex max-w-full items-center gap-3 overflow-x-auto rounded-md border border-fd-border bg-fd-muted px-4 py-2.5 font-mono text-xs">
+          <div className="home-install-command mt-10 inline-flex max-w-full items-center gap-4 overflow-x-auto rounded-md border border-fd-muted-foreground/55 bg-transparent px-5 py-4 font-mono text-base">
             <span className="home-subtle">$</span>
-            <code className="whitespace-nowrap text-fd-foreground">
+            <span className="whitespace-nowrap text-fd-foreground">
               {installCommand}
-            </code>
+            </span>
             <CopyButton text={installCommand} />
           </div>
         </div>

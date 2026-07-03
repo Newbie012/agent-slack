@@ -11,10 +11,10 @@ export function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={onClick}
-      className="p-1.5 rounded hover:bg-fd-muted-foreground/10 text-fd-muted-foreground hover:text-fd-foreground transition-colors"
+      className="rounded p-2 text-fd-muted-foreground transition-colors hover:bg-fd-muted-foreground/10 hover:text-fd-foreground"
       aria-label="Copy to clipboard"
     >
-      {checked ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      {checked ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
     </button>
   );
 }
