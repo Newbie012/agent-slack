@@ -2,7 +2,16 @@ import { createRequire } from "node:module"
 import type { CommandMetadata } from "./types.js"
 
 const require = createRequire(import.meta.url)
-const packageJson = require("../../package.json") as { readonly version?: string }
+
+// Injected as a string literal at build time (see rolldown.config.mjs), which
+// lets the bundle drop the require below. When run from source (tests, dev
+// before bundling) the token is undefined, so fall back to reading package.json
+// relative to this file. `typeof` on an undeclared identifier is safe.
+declare const __CLI_VERSION__: string | undefined
+const packageJson =
+  typeof __CLI_VERSION__ === "string"
+    ? { version: __CLI_VERSION__ }
+    : (require("../../package.json") as { readonly version?: string })
 
 export const PRIMARY_COMMAND_NAME = "agent-slack"
 export const SHORT_COMMAND_NAME = "aslk"
