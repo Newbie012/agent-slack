@@ -47,17 +47,28 @@ agent-slack auth status --json
   "profile": "default",
   "data": {
     "name": "default",
+    "teamId": "T123",
+    "enterpriseId": null,
     "userId": "U123",
+    "botId": null,
     "tokenType": "user",
     "scopes": ["channels:read", "channels:history", "users:read"],
+    "hasBotToken": false,
     "hasUserToken": true,
-    "hasBotToken": false
+    "hasAdminToken": false,
+    "hasAppToken": false
   },
   "warnings": []
 }
 ```
 
 If a later command fails with `MissingScope`, this is where you'll spot the gap.
+
+<Callout type="info">
+  The CLI prints compact JSON by default to save tokens; examples here are
+  indented for readability. Add `--pretty` to indent, or `--full` for the raw
+  Slack objects.
+</Callout>
 
 ## 4. Find a conversation
 
@@ -83,7 +94,8 @@ agent-slack conversation history C123 --since 24h --json
 ## 6. Read a full thread
 
 Most agent workflows lean on this command. Pass the channel and the root message
-timestamp, and pull in the referenced users and permalinks in one call:
+timestamp, and use `--include` to hydrate author names and permalinks in one
+call:
 
 ```bash
 agent-slack thread get \
@@ -96,15 +108,18 @@ agent-slack thread get \
 ## 7. Build context for an agent
 
 `conversation context` is the summarization-ready read: it fetches history, then
-hydrates users, thread replies, and permalinks into one deterministic payload.
-Stream it as NDJSON (one item per line) when you're piping into an agent:
+hydrates users, thread replies, and permalinks into one payload. Use `--json` to
+get that whole bundle:
 
 ```bash
 agent-slack conversation context C123 \
   --since 24h \
   --include users,threads,permalinks \
-  --format ndjson
+  --json
 ```
+
+`--format ndjson` streams the messages one per line, but the hydrated users,
+threads, and permalinks come back only with `--json`.
 
 ## 8. Search when you don't know the channel
 

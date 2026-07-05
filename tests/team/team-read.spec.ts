@@ -20,7 +20,7 @@ describe("team read commands", () => {
     expect(result.envelope).toMatchObject({
       ok: true,
       method: "team.info",
-      data: { ok: true, team: { id: "T123", name: "Engineering" } }
+      data: { team: { id: "T123", name: "Engineering" } }
     })
   })
 })

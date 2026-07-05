@@ -23,7 +23,6 @@ describe("emulate thread read", () => {
       ok: true,
       method: "conversations.replies",
       data: {
-        ok: true,
         messages: expect.arrayContaining([
           expect.objectContaining({ text: "emulate parent", ts: thread.parentTs }),
           expect.objectContaining({ text: "emulate reply", ts: thread.replyTs })

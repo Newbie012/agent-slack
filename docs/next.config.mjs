@@ -12,6 +12,15 @@ const config = {
         source: '/docs/:path*.mdx',
         destination: '/llms.mdx/docs/:path*',
       },
+      // Keep the legacy Slack app URLs working, now served by the fumadocs pages.
+      {
+        source: '/privacy',
+        destination: '/docs/privacy',
+      },
+      {
+        source: '/support',
+        destination: '/docs/support',
+      },
     ];
   },
 };

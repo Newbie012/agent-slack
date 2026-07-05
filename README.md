@@ -2,8 +2,8 @@
 
 # agent-slack
 
-Slack context for AI agents via the `agent-slack` CLI.
-Short alias: `aslk`.
+Read your Slack workspace from the command line: threads, channels, users, files, and search.
+Built so your AI agents can read Slack too. Short alias: `aslk`.
 
 <pre align="center">npm install -g @eliya-oss/agent-slack</pre>
 

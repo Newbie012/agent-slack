@@ -12,6 +12,7 @@ Non-goal for v0: agent-side summarization. The CLI returns clean context; agents
 
 - Noun-verb commands: `agent-slack conversation history`, `agent-slack thread get`, `agent-slack api call`.
 - JSON is always available with `--json`; non-TTY stdout defaults to JSON.
+- Output is token-efficient by default: read commands return slim normalized shapes, and JSON is serialized compactly (no indentation). `--pretty` restores indentation; `--full` returns raw Slack objects.
 - Data goes to stdout. Progress, warnings, and errors go to stderr.
 - Every command supports `--help --json`; every group supports `describe --json`.
 - Large reads support `--cursor`, `--limit`, `--all`, and `--format ndjson`.
@@ -22,9 +23,10 @@ Non-goal for v0: agent-side summarization. The CLI returns clean context; agents
 
 ```bash
 agent-slack [--profile NAME] [--team TEAM_ID] [--token user|bot|admin|app]
-    [--json] [--format json|ndjson|table] [--fields FIELD[,FIELD...]]
+    [--json] [--format json|ndjson|table] [--pretty] [--full]
+    [--fields FIELD[,FIELD...]]
     [--limit N] [--cursor CURSOR] [--all]
-    [--include users,reactions,files,permalinks,threads]
+    [--include users,threads,permalinks]
     [--no-cache] [--trace]
 ```
 
@@ -109,7 +111,7 @@ agent-slack conversation list --types public_channel,private_channel,mpim,im [--
 agent-slack conversation get CHANNEL_ID
 agent-slack conversation members CHANNEL_ID [--all]
 agent-slack conversation history CHANNEL_ID [--oldest TS] [--latest TS] [--all]
-agent-slack conversation context CHANNEL_ID [--since 24h] [--include users,reactions,files,threads]
+agent-slack conversation context CHANNEL_ID [--since 24h] [--include users,threads,permalinks]
 ```
 
 `conversation context` returns normalized messages, hydrated users, thread refs, file refs, reactions, and permalinks in one deterministic payload for agents.
@@ -117,7 +119,7 @@ agent-slack conversation context CHANNEL_ID [--since 24h] [--include users,react
 ### Threads and messages
 
 ```bash
-agent-slack thread get --channel CHANNEL_ID --ts MESSAGE_TS [--include users,reactions,files,permalinks]
+agent-slack thread get --channel CHANNEL_ID --ts MESSAGE_TS [--include users,permalinks]
 agent-slack message get --channel CHANNEL_ID --ts MESSAGE_TS
 agent-slack message permalink --channel CHANNEL_ID --ts MESSAGE_TS
 ```
@@ -182,6 +184,38 @@ Rules:
 
 ## Output Contract
 
+### Serialization
+
+JSON is serialized compactly by default (no indentation) to minimize an agent's
+token cost. `--pretty` restores 2-space indentation for humans. Human TTY
+rendering is unchanged.
+
+### Normalization
+
+Read commands return slim normalized shapes by default, carrying the fields an
+agent needs to reason and dropping Slack boilerplate. `--full` bypasses
+normalization and returns the raw Slack objects.
+
+- **message**: `user` (or `bot_id`/`username`), `ts`, `text`, and, when present,
+  `thread_ts`, `reply_count`, `reactions` (`[{name, count}]`), `files`
+  (`[{id, name, mimetype, size}]`), `subtype`, `edited`. Drops `blocks`,
+  `client_msg_id`, `team`, and reaction user lists.
+- **user**: `id`, `name`, `real_name` (display name), and, when present,
+  `is_bot`, `deleted`, `title`. Drops all `image_*` URLs, `color`, `status_*`,
+  `tz`, and team fields.
+- **file**: `id`, `name`, `mimetype`, `size`, and `permalink` when present.
+  Drops thumbnails and private URLs.
+- **conversation**: `id`, `name`, `is_private`, `is_archived`, `topic`,
+  `purpose`, `num_members` when present.
+- `conversation context` dedupes thread roots already present in `messages` and
+  hydrates every unique author, including those who appear only in replies.
+
+### Scope warnings
+
+When a scope the active token lacks would make a result more complete or
+efficient (for example `users:read` for author hydration), the CLI adds a
+message to `warnings` instead of failing silently.
+
 Default JSON envelope:
 
 ```json
@@ -212,7 +246,7 @@ Structured error on stderr:
 {
   "ok": false,
   "error": {
-    "type": "rate_limited",
+    "type": "SlackRateLimited",
     "title": "Slack rate limit reached",
     "slack_error": "ratelimited",
     "retriable": true,
@@ -230,7 +264,7 @@ Exit codes:
 - `2`: usage or validation error
 - `3`: not found
 - `4`: auth or permission denied
-- `5`: conflict or invalid Slack state
+- `5`: unsafe method blocked
 - `6`: rate limited
 
 Rate-limit behavior:
@@ -264,13 +298,13 @@ Schema output includes:
 Read a thread:
 
 ```bash
-agent-slack thread get --channel C123 --ts 1710000000.000100 --include users,reactions,files,permalinks --json
+agent-slack thread get --channel C123 --ts 1710000000.000100 --include users,permalinks --json
 ```
 
 Prepare channel-summary input:
 
 ```bash
-agent-slack conversation context C123 --since 24h --include users,reactions,files,threads --format ndjson
+agent-slack conversation context C123 --since 24h --include users,threads,permalinks --json
 ```
 
 Search before reading:

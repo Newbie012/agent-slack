@@ -1,20 +1,22 @@
 ---
 title: Introduction
-description: Slack context for AI agents, through a predictable, permission-bounded CLI.
+description: Read your Slack workspace from the command line, built so agents can too.
 icon: BookOpen
 ---
 
-`agent-slack` is a read-first Slack CLI built for AI agents. A human logs in
-once, and the agent reads Slack context (threads, channels, users, files,
-reactions, and search) as structured JSON it can parse directly.
+`agent-slack` is a command-line tool for reading your Slack workspace: threads,
+channels, users, files, and search, without leaving the terminal. It reads only
+what your Slack permissions allow, and it's built so your AI agents can read
+Slack just as easily as you can.
 
 Its short alias is `aslk`. Both names run the same commands.
 
 ## The problem it solves
 
-Agents keep needing Slack. The decision is in a thread, the incident timeline is
-in `#ops`, the spec someone promised is a file in a DM. Getting that context to
-an agent usually means one of two bad options:
+You need something out of Slack: the decision in a thread, the incident timeline
+in `#ops`, the spec someone dropped in a DM. Whether you are reading it yourself
+or handing it to an agent, getting it out of Slack usually means one of two bad
+options:
 
 - **Point a browser tool at the Slack web UI.** Slack's interface is built for
   people, not machines. Output is non-deterministic, formatting gets mangled,
@@ -31,6 +33,14 @@ same [envelope](/docs/reference/output-contract), so an agent can parse the
 result without scraping terminal prose. Ask your agent to summarize `#incidents`
 overnight or catch you up on a thread: `agent-slack` hands it the clean,
 permission-bounded context, and the agent does the reasoning.
+
+## Built for agents, too
+
+Everything you can read, an agent can read the same way. Every read command
+returns the same JSON envelope (or NDJSON, one item per line), and `describe
+--json` lists each command's flags and output. Failures come back as typed
+errors. An agent can discover commands, run them non-interactively, and use the
+results without scraping terminal text.
 
 ## The Slack boundary
 

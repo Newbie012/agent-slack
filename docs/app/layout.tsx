@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     template: '%s | agent-slack',
   },
   description:
-    'A command-line tool that gives agents structured Slack context through JSON, NDJSON, and a safe Slack Web API escape hatch.',
+    'Read your Slack workspace from the command line: threads, channels, users, files, and search. Built so your AI agents can read Slack too.',
   openGraph: {
     type: 'website',
     siteName: 'agent-slack',

@@ -1,6 +1,6 @@
 import { flagBoolean, flagString, parseArgs } from "../cli/args.js"
 import type { CliExecution, CliExecutionOptions, ParsedArgs } from "../cli/types.js"
-import { errorEnvelope } from "../output/envelope.js"
+import { errorEnvelope, serializeJson } from "../output/envelope.js"
 import { renderHumanErrorEnvelope } from "../output/human.js"
 import { dispatch, renderDispatchResult } from "./commands.js"
 import type { CliServices } from "./services.js"
@@ -21,8 +21,9 @@ export const executeCli = async (
     }
   } catch (error) {
     const { envelope, exitCode } = errorEnvelope(error)
+    const pretty = parsed === null ? argv.includes("--pretty") : flagBoolean(parsed, "pretty")
     const stderr = shouldRenderJsonError(argv, parsed, options)
-      ? `${JSON.stringify(envelope, null, 2)}\n`
+      ? serializeJson(envelope, pretty)
       : renderHumanErrorEnvelope(envelope, {
         color: shouldColorError(argv, parsed, options)
       })

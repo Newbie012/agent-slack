@@ -1,0 +1,28 @@
+---
+title: Privacy
+description: Privacy details for agent-slack and its Slack OAuth relay.
+icon: ShieldCheck
+---
+
+agent-slack is a local CLI. Slack tokens are stored on your machine and are
+never sent to this site.
+
+## OAuth relay
+
+When you sign in, this site receives Slack's OAuth callback parameters and
+immediately forwards them to the CLI's callback on your machine. It is a
+pass-through step, not a place your data is kept.
+
+## Stored data
+
+The relay stores no Slack messages, files, tokens, workspace data, or user data.
+
+## Slack access
+
+The CLI can read only the Slack data your approved scopes, workspace policy, and
+channel membership allow.
+
+## Contact
+
+For questions, open a
+[GitHub issue](https://github.com/Newbie012/agent-slack/issues).

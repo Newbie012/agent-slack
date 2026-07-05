@@ -9,18 +9,18 @@ export default function HomePage() {
       <section className="border-b border-fd-border px-6 py-18 md:py-24">
         <div className="mx-auto max-w-4xl">
           <div className="home-subtle mb-7 text-sm font-medium">
-            Agent-readable Slack
+            Open-source Slack CLI
           </div>
 
           <h1 className="max-w-3xl text-3xl font-medium text-fd-foreground md:text-4xl">
-            Read Slack from the terminal, inside Slack&apos;s boundary.
+            Slack, from the command line.
           </h1>
 
           <p className="home-muted mt-6 max-w-3xl text-base leading-7">
-            Agent Slack gives operators authenticated Slack reads and gives
-            agents structured context they can parse. Read threads, channel
-            history, users, files, search results, and raw Web API responses
-            without scraping the Slack UI.
+            agent-slack reads threads, channels, users, files, and search
+            straight from your terminal, inside your real Slack permissions. And
+            it&apos;s built so your AI agents can read Slack just as easily as
+            you can.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -192,8 +192,8 @@ Read Slack through structured JSON or NDJSON. Keep data on stdout, diagnostics o
 
 const quickStart = `agent-slack auth login
 agent-slack auth status --json
-agent-slack thread get --channel C123 --ts 1710000000.000100 --include users,permalinks --json
-agent-slack conversation context C123 --since 24h --include users,threads --format ndjson`;
+agent-slack thread get --channel C123 --ts 1710000000.000100 --json
+agent-slack conversation context C123 --since 24h --include users,threads,permalinks --json`;
 
 const capabilityRoutes = [
   {

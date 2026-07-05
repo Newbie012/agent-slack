@@ -8,6 +8,8 @@ const booleanFlags = new Set([
   "json",
   "no-color",
   "raw",
+  "pretty",
+  "full",
   "trace",
   "yes",
   "no-cache",

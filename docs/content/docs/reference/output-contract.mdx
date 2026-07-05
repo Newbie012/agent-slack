@@ -1,16 +1,27 @@
 ---
 title: Output Contract
-description: JSON, NDJSON, paging, fields, and structured errors.
+description: Slim JSON, compact by default, NDJSON, paging, fields, and structured errors.
 icon: Braces
 ---
 
 Agent Slack separates data from diagnostics.
 
 - Success output goes to stdout.
-- Errors go to stderr.
-- Use `--json` for pretty JSON.
-- Use `--format ndjson` for newline-delimited item streams.
+- Errors and warnings go to stderr.
+- Use `--json` for JSON, or `--format ndjson` for newline-delimited item streams.
 - Non-TTY stdout defaults to JSON.
+
+## Serialization
+
+JSON is serialized compactly by default (no indentation) to keep an agent's
+token cost low. Add `--pretty` when a human wants to read it:
+
+```bash
+agent-slack thread get --channel C123 --ts 1710000000.000100 --json
+# {"ok":true,"method":"conversations.replies","data":{"messages":[...]},...}
+
+agent-slack thread get --channel C123 --ts 1710000000.000100 --json --pretty
+```
 
 ## Success envelope
 
@@ -27,6 +38,53 @@ Agent Slack separates data from diagnostics.
     "has_more": false
   },
   "warnings": []
+}
+```
+
+## Slim shapes
+
+Read commands return normalized shapes that keep the fields an agent needs and
+drop Slack boilerplate. A raw `users.info` object carries roughly seven avatar
+URLs plus color, status, and timezone fields; a raw message carries a `blocks`
+tree that duplicates its own `text`. Slimming drops that boilerplate, which
+typically shrinks a read several times over with no loss of reasoning-relevant
+fields.
+
+- **message**: `user` (or `bot_id` / `username`), `ts`, `text`, and, when
+  present, `thread_ts`, `reply_count`, `reactions`, `files`, `subtype`, `edited`.
+- **user**: `id`, `name`, `real_name`, and, when present, `is_bot`, `deleted`,
+  `title`.
+- **file**: `id`, `name`, `mimetype`, `size`, `permalink`.
+- **conversation**: `id`, `name`, `topic`, `purpose`, `num_members`, and the
+  privacy/archive flags (`is_private`, `is_archived`, `is_im`, `is_mpim`) when
+  present.
+
+Use `--full` to bypass normalization and get the raw Slack objects:
+
+```bash
+agent-slack conversation history C123 --json          # slim
+agent-slack conversation history C123 --json --full   # raw Slack objects
+```
+
+The generic [`api call`](/docs/reference/web-api) command is never slimmed: its
+`data` is Slack's response body unchanged (wrapped in the envelope, or bare with
+`--raw`), so nothing is dropped.
+
+## Warnings
+
+When a scope the active token lacks would make a result more complete, the CLI
+reports it in `warnings` instead of failing silently. For example, running
+`conversation context --include users` without `users:read` returns the messages
+and warns that authors were left as IDs:
+
+```json
+{
+  "ok": true,
+  "method": "conversation.context",
+  "data": { "channel": "C123", "messages": [] },
+  "warnings": [
+    "users:read scope is missing, so message authors are returned as IDs only. Reconnect with users:read to hydrate names."
+  ]
 }
 ```
 
@@ -64,15 +122,14 @@ agent-slack conversation history C123 --fields messages.0.text --json
 
 ## Raw Slack response
 
-`api call` and other Slack method calls support `--raw`:
+`api call` and other Slack method calls support `--raw`, which prints Slack's
+response body without the Agent Slack envelope (also compact by default):
 
 ```bash
 agent-slack api call conversations.history \
   --payload '{"channel":"C123","limit":5}' \
   --raw
 ```
-
-`--raw` prints Slack's response body without the Agent Slack envelope.
 
 ## Error envelope
 

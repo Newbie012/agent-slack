@@ -3,7 +3,7 @@
 > `agent-slack` gives humans and agents a reliable way to authenticate to Slack and retrieve permitted Slack context.
 
 - **Status:** `accepted`
-- **Last updated:** 2026-07-02
+- **Last updated:** 2026-07-05
 
 ## User Problem
 
@@ -13,7 +13,7 @@ Agents need Slack context to answer questions about threads, channels, files, an
 
 The CLI lets a human operator authenticate a named Slack profile, inspect the profile's workspace and granted scopes, and remove that profile later.
 
-The CLI lets an agent retrieve Slack data through resource-oriented commands: conversations, threads, messages, users, files, reactions, pins, bookmarks, and search/context results. Results are returned as structured data, with large result sets streamable record-by-record.
+The CLI lets an agent retrieve Slack data through resource-oriented commands: conversations, threads, messages, users, files, reactions, pins, bookmarks, and search/context results. Results are returned as structured data, normalized to a compact, agent-readable shape so an agent spends its context on content rather than Slack boilerplate. Large result sets are streamable record-by-record.
 
 The CLI includes a generic Slack Web API escape hatch so agents can call newly available Slack read methods before a convenience command exists. The CLI blocks known unsafe write or destructive calls unless the operator opts in explicitly.
 
@@ -32,7 +32,9 @@ The CLI accepts a named profile and Slack resource identifiers such as channel I
 
 The CLI returns stable structured output for successful reads and stable structured errors for failures. It keeps data output separate from diagnostic output.
 
-The CLI refuses to imply access Slack has not granted. Missing scopes, invalid auth, inaccessible conversations, not-found resources, and rate limits are visible outcomes.
+Read output is token-efficient by default: commands return normalized shapes carrying the reasoning-relevant fields, and machine output is serialized compactly. `--pretty` restores indentation for humans; `--full` returns the raw Slack objects for the rare case that needs them.
+
+The CLI refuses to imply access Slack has not granted. Missing scopes, invalid auth, inaccessible conversations, not-found resources, and rate limits are visible outcomes. When a scope the token lacks would make a result more complete or efficient, the CLI reports it as a warning rather than failing silently.
 
 The technical command, flag, schema, and exit-code details live in `../cli-api.md`.
 

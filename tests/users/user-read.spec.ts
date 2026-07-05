@@ -20,7 +20,7 @@ describe("user read commands", () => {
     expect(result.envelope).toMatchObject({
       ok: true,
       method: "users.info",
-      data: { ok: true, user: { id: "U123", name: "developer" } }
+      data: { user: { id: "U123", name: "developer" } }
     })
     expect(driver.slack.listCalls()).toEqual([
       expect.objectContaining({

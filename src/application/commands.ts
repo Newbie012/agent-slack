@@ -4,8 +4,9 @@ import type { CliExecutionOptions, ParsedArgs } from "../cli/types.js"
 import { ResourceNotFound, UnsupportedMethod, UsageError } from "../domain/errors.js"
 import { ProfileName, Scope } from "../domain/ids.js"
 import type { AuthProfile } from "../domain/slack.js"
-import { pagingFrom, successEnvelope, toNdjson } from "../output/envelope.js"
+import { pagingFrom, serializeJson, successEnvelope, toNdjson } from "../output/envelope.js"
 import { renderHumanEnvelope } from "../output/human.js"
+import { normalizeResponse, slimFile, slimMessage, slimUser } from "../output/normalize.js"
 import { projectFields } from "../output/projection.js"
 import { getProfile, parseTokenType, requireYes, tokenFor } from "./auth.js"
 import { parseJsonPayload, requirePositional } from "./payload.js"
@@ -108,14 +109,7 @@ export const dispatch = async (parsed: ParsedArgs, services: CliServices): Promi
   }
 
   if (first === "thread" && second === "get") {
-    return methodCall(parsed, services, {
-      method: "conversations.replies",
-      payload: {
-        channel: requireFlag(parsed, "channel"),
-        ts: requireFlag(parsed, "ts"),
-        limit: numberFlag(parsed, "limit")
-      }
-    })
+    return threadGet(parsed, services)
   }
 
   if (first === "message") {
@@ -293,7 +287,7 @@ const apiCall = async (parsed: ParsedArgs, services: CliServices): Promise<Dispa
     inline: flagString(parsed, "payload"),
     positional: parsed.positionals[3]
   })
-  return methodCall(parsed, services, { method, payload })
+  return methodCall(parsed, services, { method, payload }, { normalize: false })
 }
 
 const teamCommand = async (parsed: ParsedArgs, services: CliServices): Promise<DispatchResult> => {
@@ -381,6 +375,9 @@ const conversationCommand = async (parsed: ParsedArgs, services: CliServices): P
   throw new UsageError("Unknown conversation command", { command: parsed.positionals.join(" ") })
 }
 
+const hasScope = (profile: AuthProfile, scope: string): boolean =>
+  (profile.scopes as readonly string[]).includes(scope)
+
 const conversationContext = async (parsed: ParsedArgs, services: CliServices): Promise<DispatchResult> => {
   const channel = requirePositional(parsed.positionals, 2, "CHANNEL_ID")
   const profileName = flagString(parsed, "profile", "default") ?? "default"
@@ -403,27 +400,73 @@ const conversationContext = async (parsed: ParsedArgs, services: CliServices): P
     allowWrite: false,
     yes: false
   })
+  const full = flagBoolean(parsed, "full")
+  const shape = (message: unknown): unknown => (full ? message : slimMessage(message))
   const messages = extractArray(history.response.messages)
+  const warnings: string[] = []
   const context: Record<string, unknown> = {
     channel,
-    messages
+    messages: messages.map(shape)
+  }
+
+  // Fetch threads first so authors who appear only in replies still get hydrated.
+  const threadReplies: Record<string, readonly unknown[]> = {}
+  if (include.has("threads")) {
+    const threads: Record<string, unknown> = {}
+    for (const message of messages) {
+      const record = extractLooseRecord(message)
+      const ts = stringField(record, "thread_ts") ?? stringField(record, "ts")
+      const hasReplies = typeof record.reply_count === "number" && record.reply_count > 0
+      if (ts !== undefined && hasReplies) {
+        const thread = await callSlack(services, {
+          method: "conversations.replies",
+          payload: { channel, ts },
+          token,
+          profile,
+          all: false,
+          allowWrite: false,
+          yes: false
+        })
+        // Drop the root; it is already present in `messages`.
+        const replies = extractArray(thread.response.messages).filter(
+          (reply) => stringField(extractLooseRecord(reply), "ts") !== ts
+        )
+        threadReplies[ts] = replies
+        threads[ts] = replies.map(shape)
+      }
+    }
+    context.threads = threads
   }
 
   if (include.has("users")) {
-    const users: Record<string, unknown> = {}
-    for (const userId of uniqueStrings(messages.map((message) => stringField(extractLooseRecord(message), "user")))) {
-      const user = await callSlack(services, {
-        method: "users.info",
-        payload: { user: userId },
-        token,
-        profile,
-        all: false,
-        allowWrite: false,
-        yes: false
-      })
-      users[userId] = user.response.user ?? user.response
+    if (hasScope(profile, "users:read")) {
+      const replyAuthors = Object.values(threadReplies)
+        .flat()
+        .map((reply) => stringField(extractLooseRecord(reply), "user"))
+      const authorIds = uniqueStrings([
+        ...messages.map((message) => stringField(extractLooseRecord(message), "user")),
+        ...replyAuthors
+      ])
+      const users: Record<string, unknown> = {}
+      for (const userId of authorIds) {
+        const user = await callSlack(services, {
+          method: "users.info",
+          payload: { user: userId },
+          token,
+          profile,
+          all: false,
+          allowWrite: false,
+          yes: false
+        })
+        const raw = user.response.user ?? user.response
+        users[userId] = full ? raw : slimUser(raw)
+      }
+      context.users = users
+    } else {
+      warnings.push(
+        "users:read scope is missing, so message authors are returned as IDs only. Reconnect with users:read to hydrate names."
+      )
     }
-    context.users = users
   }
 
   if (include.has("permalinks")) {
@@ -446,34 +489,102 @@ const conversationContext = async (parsed: ParsedArgs, services: CliServices): P
     context.permalinks = permalinks
   }
 
-  if (include.has("threads")) {
-    const threads: Record<string, unknown> = {}
-    for (const message of messages) {
-      const record = extractLooseRecord(message)
-      const ts = stringField(record, "thread_ts") ?? stringField(record, "ts")
-      const hasReplies = typeof record.reply_count === "number" && record.reply_count > 0
-      if (ts !== undefined && hasReplies) {
-        const thread = await callSlack(services, {
-          method: "conversations.replies",
-          payload: { channel, ts },
+  return {
+    method: "conversation.context",
+    profile,
+    response: history.response,
+    stdoutValue: context,
+    items: messages.map(shape),
+    ...(warnings.length > 0 ? { warnings } : {})
+  }
+}
+
+const threadGet = async (parsed: ParsedArgs, services: CliServices): Promise<DispatchResult> => {
+  const profileName = flagString(parsed, "profile", "default") ?? "default"
+  const tokenType = parseTokenType(flagString(parsed, "token"))
+  const profile = await getProfile(services, profileName)
+  const token = tokenFor(profile, tokenType)
+  const channel = requireFlag(parsed, "channel")
+  const ts = requireFlag(parsed, "ts")
+  const full = flagBoolean(parsed, "full")
+  const include = new Set(splitCsv(flagString(parsed, "include")))
+  const result = await callSlack(services, {
+    method: "conversations.replies",
+    payload: cleanObject({ channel, ts, limit: numberFlag(parsed, "limit") }),
+    token,
+    profile,
+    all: flagBoolean(parsed, "all"),
+    allowWrite: false,
+    yes: false
+  })
+
+  if (flagBoolean(parsed, "raw")) {
+    return {
+      method: "conversations.replies",
+      profile,
+      stdoutValue: result.response,
+      rawStdout: serializeJson(result.response, flagBoolean(parsed, "pretty")),
+      response: result.response,
+      items: result.items
+    }
+  }
+
+  const shape = (message: unknown): unknown => (full ? message : slimMessage(message))
+  const rawMessages = extractArray(result.response.messages)
+  const warnings: string[] = []
+  const data: Record<string, unknown> = { messages: rawMessages.map(shape) }
+
+  if (include.has("users")) {
+    if (hasScope(profile, "users:read")) {
+      const users: Record<string, unknown> = {}
+      for (const userId of uniqueStrings(rawMessages.map((message) => stringField(extractLooseRecord(message), "user")))) {
+        const user = await callSlack(services, {
+          method: "users.info",
+          payload: { user: userId },
           token,
           profile,
           all: false,
           allowWrite: false,
           yes: false
         })
-        threads[ts] = thread.response.messages ?? thread.response
+        const raw = user.response.user ?? user.response
+        users[userId] = full ? raw : slimUser(raw)
+      }
+      data.users = users
+    } else {
+      warnings.push(
+        "users:read scope is missing, so message authors are returned as IDs only. Reconnect with users:read to hydrate names."
+      )
+    }
+  }
+
+  if (include.has("permalinks")) {
+    const permalinks: Record<string, string> = {}
+    for (const messageTs of uniqueStrings(rawMessages.map((message) => stringField(extractLooseRecord(message), "ts")))) {
+      const permalink = await callSlack(services, {
+        method: "chat.getPermalink",
+        payload: { channel, message_ts: messageTs },
+        token,
+        profile,
+        all: false,
+        allowWrite: false,
+        yes: false
+      })
+      const value = stringField(permalink.response, "permalink")
+      if (value !== undefined) {
+        permalinks[messageTs] = value
       }
     }
-    context.threads = threads
+    data.permalinks = permalinks
   }
 
   return {
-    method: "conversation.context",
+    method: "conversations.replies",
     profile,
-    response: history.response,
-    stdoutValue: context,
-    items: messages
+    response: result.response,
+    stdoutValue: data,
+    items: rawMessages.map(shape),
+    ...(warnings.length > 0 ? { warnings } : {})
   }
 }
 
@@ -542,14 +653,15 @@ const fileDownload = async (parsed: ParsedArgs, services: CliServices): Promise<
     method: "file.download",
     profile,
     response: result.response,
-    stdoutValue: { file, download }
+    stdoutValue: { file: flagBoolean(parsed, "full") ? file : slimFile(file), download }
   }
 }
 
 const methodCall = async (
   parsed: ParsedArgs,
   services: CliServices,
-  input: { readonly method: string; readonly payload: Record<string, unknown> }
+  input: { readonly method: string; readonly payload: Record<string, unknown> },
+  options: { readonly normalize?: boolean } = {}
 ): Promise<DispatchResult> => {
   const profileName = flagString(parsed, "profile", "default") ?? "default"
   const tokenType = parseTokenType(flagString(parsed, "token"))
@@ -571,16 +683,17 @@ const methodCall = async (
       method: input.method,
       profile,
       stdoutValue: result.response,
-      rawStdout: `${JSON.stringify(result.response, null, 2)}\n`,
+      rawStdout: serializeJson(result.response, flagBoolean(parsed, "pretty")),
       response: result.response,
       items: result.items
     }
   }
 
+  const normalize = options.normalize !== false && !flagBoolean(parsed, "full")
   return {
     method: input.method,
     profile,
-    stdoutValue: result.response,
+    stdoutValue: normalize ? normalizeResponse(input.method, result.response) : result.response,
     response: result.response,
     items: result.items
   }
@@ -606,7 +719,7 @@ export const renderDispatchResult = (
     ...(result.warnings === undefined ? {} : { warnings: result.warnings })
   })
   if (shouldRenderJson(parsed, options)) {
-    return `${JSON.stringify(envelope, null, 2)}\n`
+    return serializeJson(envelope, flagBoolean(parsed, "pretty"))
   }
   return renderHumanEnvelope(envelope, {
     color: options.stdoutIsTty === true && options.env?.NO_COLOR === undefined && !flagBoolean(parsed, "no-color")

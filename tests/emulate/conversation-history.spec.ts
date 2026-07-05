@@ -20,7 +20,6 @@ describe("emulate conversation history", () => {
       ok: true,
       method: "conversations.history",
       data: {
-        ok: true,
         messages: [
           expect.objectContaining({
             text: "emulate-backed hello",

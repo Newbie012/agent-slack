@@ -357,6 +357,13 @@ figure pre {
 }
 
 /* ============================================
+   Sidebar - Sponsors icon in Slack raspberry
+   ============================================ */
+a[href='/docs/sponsors'] svg {
+  color: #e01e5a;
+}
+
+/* ============================================
    Reduced motion
    ============================================ */
 @media (prefers-reduced-motion: reduce) {

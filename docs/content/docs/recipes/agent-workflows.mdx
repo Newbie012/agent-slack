@@ -18,13 +18,13 @@ then read the thread it points you to.
 # 1. Find candidates across messages and files
 agent-slack search context --query "project atlas" --content-types messages,files --json
 
-# 2. Read the thread the top hit belongs to
+# 2. Open the thread a hit points to, with names and links
 agent-slack thread get --channel C123 --ts 1710000000.000100 --include users,permalinks --json
 ```
 
-`search context` returns matches with their channel and timestamp, which is
-exactly what `thread get` needs. Passing `--include users` means the agent gets
-display names inline instead of raw `U…` IDs.
+Use the channel and message timestamp from a search hit to open the thread with
+`thread get`. Passing `--include users,permalinks` hydrates author names and
+per-message links, so the agent gets names instead of raw user IDs.
 
 ## Summarize a channel's last day
 
@@ -36,13 +36,13 @@ it stitch together separate history, replies, and user calls. That's what
 agent-slack conversation context C123 \
   --since 24h \
   --include users,threads,permalinks \
-  --format ndjson
+  --json
 ```
 
 `conversation context` reads history, then hydrates the referenced users, thread
-replies, and permalinks into a single payload. NDJSON streams one item per line,
-which is friendlier for feeding into a model incrementally. The CLI returns the
-context; your agent writes the summary.
+replies, and permalinks into one payload. Keep `--json` for the full bundle;
+`--format ndjson` streams just the messages, without the hydrated users, threads,
+and permalinks. The CLI returns the context; your agent writes the summary.
 
 ## Hand a file's contents to an agent
 

@@ -1,0 +1,59 @@
+---
+title: Acknowledgments
+description: The open source work Agent Slack is built on.
+icon: Award
+---
+
+Agent Slack stands on the shoulders of excellent open source work. Thank you to
+the maintainers and contributors behind these projects.
+
+## Design
+
+### Agent Surface
+
+`agent-slack` was designed around the CLI principles from
+[Agent Surface](https://agentsurface.dev), a field guide for software that
+agents can use. Its noun-verb commands, JSON-first output, schema introspection
+(`describe --json`), compact results, and safe-by-default reads all follow that
+playbook.
+
+## Core
+
+### Effect
+
+The [Effect](https://effect.website) ecosystem (`effect` and
+`@effect/platform-node`) is the backbone of the CLI. Typed errors, dependency
+injection, and the platform runtime are what let Agent Slack model the Slack
+boundary as explicit failures instead of thrown exceptions, and keep the command
+layer testable without hitting Slack.
+
+### Slack Web API SDK
+
+[`@slack/web-api`](https://github.com/slackapi/node-slack-sdk) is the official
+Slack SDK. Every read ultimately flows through it, and the bundled method catalog
+mirrors its surface.
+
+## Documentation
+
+### Fumadocs
+
+This site is built with [Fumadocs](https://fumadocs.dev), on
+[Next.js](https://nextjs.org) and [Tailwind CSS](https://tailwindcss.com).
+Syntax-highlighted, type-checked code blocks come from
+[Shiki](https://shiki.style) and [Twoslash](https://twoslash.netlify.app), with
+icons from [Lucide](https://lucide.dev).
+
+## Tooling
+
+### Testing and release
+
+[Vitest](https://vitest.dev) and [`@effect/vitest`](https://effect.website) drive
+the test suite, [`emulate`](https://www.npmjs.com/package/emulate) backs the
+Slack emulation used in tests, and [Changesets](https://github.com/changesets/changesets)
+manages versioning and releases. [tsx](https://tsx.is) runs the CLI in
+development.
+
+## Slack
+
+Agent Slack reads from Slack through published, documented APIs. It is not
+created by, affiliated with, or supported by Slack Technologies, Inc.

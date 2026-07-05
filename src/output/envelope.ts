@@ -74,6 +74,11 @@ const suggestionFor = (tag: string): string | undefined => {
 
 export const stringifyJson = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`
 
+// Machine output is compact by default to minimize token cost; `--pretty`
+// restores indentation for humans. See ADR-002.
+export const serializeJson = (value: unknown, pretty: boolean): string =>
+  pretty ? `${JSON.stringify(value, null, 2)}\n` : `${JSON.stringify(value)}\n`
+
 export const toNdjson = (items: readonly unknown[]): string =>
   items.map((item) => JSON.stringify(item)).join("\n") + (items.length > 0 ? "\n" : "")
 

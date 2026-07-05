@@ -8,9 +8,9 @@ export const revalidate = false;
 
 // Default values for homepage
 const DEFAULTS = {
-  title: 'Slack context for agents.',
+  title: 'Slack, from the command line.',
   description:
-    'Authenticate once, then give agents stable JSON and NDJSON from Slack without scraping the web UI.',
+    'Read threads, channels, users, files, and search from your terminal, inside your Slack permissions. Built so your AI agents can read Slack too.',
 };
 
 export async function GET(request: Request) {
