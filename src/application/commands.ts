@@ -1,5 +1,5 @@
 import { flagBoolean, flagString, requireFlag, splitCsv } from "../cli/args.js"
-import { PRIMARY_COMMAND_NAME, describeAllCommands, describeCommandGroup, findCommandMetadata, renderCompletion, renderHumanHelp } from "../cli/metadata.js"
+import { CLI_VERSION, PRIMARY_COMMAND_NAME, describeAllCommands, describeCommandGroup, findCommandMetadata, renderCompletion, renderHumanHelp } from "../cli/metadata.js"
 import type { CliExecutionOptions, ParsedArgs } from "../cli/types.js"
 import { ResourceNotFound, UnsupportedMethod, UsageError } from "../domain/errors.js"
 import { ProfileName, Scope } from "../domain/ids.js"
@@ -20,12 +20,24 @@ export interface DispatchResult {
   readonly profile: AuthProfile | null
   readonly response?: Record<string, unknown>
   readonly items?: readonly unknown[]
+  // Typed records streamed after `items` in ndjson mode so `--include`
+  // hydration is not lost in the streaming format. See ADR-004.
+  readonly enrichmentRecords?: readonly unknown[]
   readonly warnings?: readonly string[]
 }
 
 export const dispatch = async (parsed: ParsedArgs, services: CliServices): Promise<DispatchResult> => {
   const pos = parsed.positionals
   const [first, second, third] = pos
+
+  if (flagBoolean(parsed, "version")) {
+    return {
+      method: "version",
+      profile: null,
+      stdoutValue: null,
+      rawStdout: `${CLI_VERSION}\n`
+    }
+  }
 
   if (flagBoolean(parsed, "help") && !flagBoolean(parsed, "json")) {
     return {
@@ -495,6 +507,11 @@ const conversationContext = async (parsed: ParsedArgs, services: CliServices): P
     response: history.response,
     stdoutValue: context,
     items: messages.map(shape),
+    enrichmentRecords: [
+      ...recordsFromMap(context.users, (_, data) => ({ type: "slack.user", data })),
+      ...recordsFromMap(context.threads, (ts, replies) => ({ type: "slack.thread", data: { ts, replies } })),
+      ...recordsFromMap(context.permalinks, (ts, permalink) => ({ type: "slack.permalink", data: { ts, permalink } }))
+    ],
     ...(warnings.length > 0 ? { warnings } : {})
   }
 }
@@ -584,6 +601,10 @@ const threadGet = async (parsed: ParsedArgs, services: CliServices): Promise<Dis
     response: result.response,
     stdoutValue: data,
     items: rawMessages.map(shape),
+    enrichmentRecords: [
+      ...recordsFromMap(data.users, (_, user) => ({ type: "slack.user", data: user })),
+      ...recordsFromMap(data.permalinks, (ts, permalink) => ({ type: "slack.permalink", data: { ts, permalink } }))
+    ],
     ...(warnings.length > 0 ? { warnings } : {})
   }
 }
@@ -708,7 +729,7 @@ export const renderDispatchResult = (
     return result.rawStdout
   }
   if (flagString(parsed, "format") === "ndjson") {
-    return toNdjson(result.items ?? [])
+    return toNdjson([...(result.items ?? []), ...(result.enrichmentRecords ?? [])])
   }
   const data = projectFields(result.stdoutValue, flagString(parsed, "fields"))
   const envelope = successEnvelope({
@@ -795,3 +816,11 @@ const extractLooseRecord = (value: unknown): Record<string, unknown> =>
 
 const uniqueStrings = (values: readonly (string | undefined)[]): readonly string[] =>
   [...new Set(values.filter((value): value is string => value !== undefined))]
+
+// Turn an include-hydration map (keyed by user/thread/message id) into the
+// typed records streamed after item lines in ndjson mode. See ADR-004.
+const recordsFromMap = (
+  value: unknown,
+  toRecord: (key: string, entry: unknown) => unknown
+): readonly unknown[] =>
+  Object.entries(extractLooseRecord(value)).map(([key, entry]) => toRecord(key, entry))

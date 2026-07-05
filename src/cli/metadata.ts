@@ -206,16 +206,21 @@ export const commandMetadata: readonly CommandMetadata[] = [
   {
     path: ["conversation", "list"],
     summary: "List conversations visible to the active profile.",
+    flags: ["--types", "--limit", "--all", "--json"],
     methods: ["conversations.list"],
     scopes: ["channels:read", "groups:read", "im:read", "mpim:read"],
     safety: "read",
     output: "conversation list",
-    examples: ["agent-slack conversation list --types public_channel,private_channel --json"]
+    examples: [
+      "agent-slack conversation list --types public_channel,private_channel --json",
+      "agent-slack conversation list --all --json"
+    ]
   },
   {
     path: ["conversation", "history"],
     summary: "Read conversation history.",
     args: ["CHANNEL_ID"],
+    flags: ["--oldest", "--latest", "--since", "--inclusive", "--limit", "--all", "--json"],
     methods: ["conversations.history"],
     scopes: ["channels:history", "groups:history", "im:history", "mpim:history"],
     safety: "read",
@@ -226,6 +231,7 @@ export const commandMetadata: readonly CommandMetadata[] = [
     path: ["conversation", "context"],
     summary: "Build channel context for agents.",
     args: ["CHANNEL_ID"],
+    flags: ["--since", "--include", "--limit", "--all", "--full", "--format", "--json"],
     methods: ["conversations.history", "conversations.replies", "users.info"],
     scopes: ["channels:history", "users:read"],
     safety: "read",
@@ -320,6 +326,7 @@ export const renderHumanHelp = (path: readonly string[]): string => {
       command.summary,
       "",
       command.args === undefined ? "" : `Usage: ${PRIMARY_COMMAND_NAME} ${command.path.join(" ")} ${command.args.join(" ")}`,
+      command.flags === undefined ? "" : `Flags: ${command.flags.join(" ")}`,
       command.scopes === undefined ? "" : `Scopes: ${command.scopes.join(", ")}`,
       "",
       "Examples:",

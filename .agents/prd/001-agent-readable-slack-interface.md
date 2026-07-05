@@ -17,6 +17,8 @@ The CLI lets an agent retrieve Slack data through resource-oriented commands: co
 
 The CLI includes a generic Slack Web API escape hatch so agents can call newly available Slack read methods before a convenience command exists. The CLI blocks known unsafe write or destructive calls unless the operator opts in explicitly.
 
+The CLI is self-describing: it reports its own version on request, and every command advertises its flags through schema introspection and help so an agent can discover pagination and enrichment options rather than guessing. When a command enriches a payload (hydrated users, threads, permalinks), that enrichment is preserved in both structured and streaming output rather than being dropped in streaming mode.
+
 ## User Stories
 
 1. As a human operator, I want to log in with Slack OAuth and name the profile, so agents can use the right workspace context.

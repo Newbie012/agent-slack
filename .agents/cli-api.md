@@ -22,7 +22,8 @@ Non-goal for v0: agent-side summarization. The CLI returns clean context; agents
 ## Global Flags
 
 ```bash
-agent-slack [--profile NAME] [--team TEAM_ID] [--token user|bot|admin|app]
+agent-slack [--version] [--help]
+    [--profile NAME] [--team TEAM_ID] [--token user|bot|admin|app]
     [--json] [--format json|ndjson|table] [--pretty] [--full]
     [--fields FIELD[,FIELD...]]
     [--limit N] [--cursor CURSOR] [--all]
@@ -35,6 +36,7 @@ Defaults:
 - `--token user` for user-visible data.
 - `--format json` when stdout is not a TTY.
 - `--limit` uses Slack's method default unless a command defines a smaller agent-safe default.
+- `--version` prints the CLI version as a bare line and exits `0`. `--help` prints the command catalog.
 
 ## Auth
 
@@ -115,6 +117,8 @@ agent-slack conversation context CHANNEL_ID [--since 24h] [--include users,threa
 ```
 
 `conversation context` returns normalized messages, hydrated users, thread refs, file refs, reactions, and permalinks in one deterministic payload for agents.
+
+`conversation list`, `conversation history`, and `conversation context` accept `--all` to auto-paginate every page, plus `--types`/`--limit` where relevant. These flags are advertised in `describe --json` and `<command> --help` so agents can discover them; without `--all` a large list returns only the first page with `paging.has_more: true`.
 
 ### Threads and messages
 
@@ -238,6 +242,17 @@ NDJSON streaming record:
 
 ```json
 {"ok":true,"type":"slack.message","team_id":"T123","channel_id":"C123","ts":"1710000000.000100","data":{}}
+```
+
+NDJSON enrichment records: when `--include` is combined with `--format ndjson`,
+the hydration maps that `--json` returns under `data.users`/`data.threads`/`data.permalinks`
+are streamed as typed records after the message lines, so the streaming mode is
+not lossy. Message lines stay bare; enrichment lines carry a `type`:
+
+```json
+{"type":"slack.user","data":{"id":"U123","name":"ada","real_name":"Ada"}}
+{"type":"slack.thread","data":{"ts":"1710000000.000100","replies":[]}}
+{"type":"slack.permalink","data":{"ts":"1710000000.000100","permalink":"https://slack.com/..."}}
 ```
 
 Structured error on stderr:

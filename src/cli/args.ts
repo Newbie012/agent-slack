@@ -5,6 +5,7 @@ const booleanFlags = new Set([
   "all",
   "allow-write",
   "help",
+  "version",
   "json",
   "no-color",
   "raw",
