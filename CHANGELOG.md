@@ -1,5 +1,13 @@
 # @eliya-oss/agent-slack
 
+## 0.1.12
+
+### Patch Changes
+
+- c48375b: The CLI now starts far faster. Every invocation used to load hundreds of separate module files, dominating the run time of even quick commands like `auth status`. The CLI now ships as a single bundled file, cutting cold start from over a second to about 45ms on a typical machine.
+
+  No commands or output change.
+
 ## 0.1.11
 
 ### Patch Changes
