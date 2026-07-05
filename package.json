@@ -1,6 +1,6 @@
 {
   "name": "@eliya-oss/agent-slack",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Slack context CLI for AI agents.",
   "type": "module",
   "packageManager": "pnpm@11.9.0",
