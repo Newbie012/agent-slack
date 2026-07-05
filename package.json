@@ -28,6 +28,7 @@
     "docs:types": "pnpm --filter docs types:check",
     "prepack": "pnpm build",
     "release:check": "pnpm check && npm pack --dry-run",
+    "release:publish": "pnpm build && changeset publish",
     "agent-slack": "tsx src/main.ts",
     "aslk": "tsx src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

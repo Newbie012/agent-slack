@@ -2,15 +2,18 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - main
+
+concurrency: release-${{ github.ref }}
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   id-token: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -23,5 +26,17 @@ jobs:
       - run: corepack pnpm --version
       - run: npm --version
       - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm release:check
-      - run: npm publish --access public
+
+      # When changesets are present, opens/updates a "Version packages" PR that
+      # bumps the version and folds the changesets into CHANGELOG.md. When that
+      # PR is merged (no changesets left), the publish script releases to npm via
+      # trusted publishing (OIDC) and creates the git tag.
+      - name: Version or publish
+        uses: changesets/action@v1
+        with:
+          version: corepack pnpm run version-packages
+          publish: corepack pnpm run release:publish
+          commit: "Version packages"
+          title: "Version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
