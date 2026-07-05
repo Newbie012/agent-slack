@@ -5,6 +5,9 @@ export interface CommandMetadata {
   readonly summary: string
   readonly args?: readonly string[]
   readonly flags?: readonly string[]
+  // Key under the response envelope's `data` that holds this command's primary
+  // payload (e.g. "channels"). Derived from the command's method; see dataKeyFor.
+  readonly dataKey?: string
   readonly methods?: readonly string[]
   readonly scopes?: readonly string[]
   readonly safety: MethodSafety

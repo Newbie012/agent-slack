@@ -25,4 +25,28 @@ describe("flag discoverability", () => {
     expect(result.stdout).toContain("Flags:")
     expect(result.stdout).toContain("--all")
   })
+
+  it("advertises the data key under which each command returns its payload", async () => {
+    await using driver = await SlackCliTestDriver.create()
+
+    // ACT
+    const result = await driver.cli.runJson({ args: ["describe", "--json"] })
+
+    // ASSERT
+    const commands = (result.envelope as { data: { commands: { path: string[]; dataKey?: string }[] } }).data.commands
+    const byPath = (path: string) => commands.find((command) => command.path.join(" ") === path)
+    expect(byPath("conversation list")?.dataKey).toBe("channels")
+    expect(byPath("conversation history")?.dataKey).toBe("messages")
+    expect(byPath("user get")?.dataKey).toBe("user")
+  })
+
+  it("advertises the data key through --help --json", async () => {
+    await using driver = await SlackCliTestDriver.create()
+
+    // ACT
+    const result = await driver.cli.runJson({ args: ["conversation", "history", "--help", "--json"] })
+
+    // ASSERT
+    expect((result.envelope as { data: { dataKey?: string } }).data.dataKey).toBe("messages")
+  })
 })

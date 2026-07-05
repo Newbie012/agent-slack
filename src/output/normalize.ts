@@ -72,6 +72,9 @@ export const slimConversation = (input: unknown): unknown => {
   if (c.is_archived === true) out.is_archived = true
   if (c.is_im === true) out.is_im = true
   if (c.is_mpim === true) out.is_mpim = true
+  // Membership is reasoning-relevant in both states, so keep the explicit
+  // boolean rather than only-when-true: absence would otherwise be ambiguous.
+  if (typeof c.is_member === "boolean") out.is_member = c.is_member
   const topic = isRec(c.topic) ? str(c.topic, "value") : undefined
   if (topic) out.topic = topic
   const purpose = isRec(c.purpose) ? str(c.purpose, "value") : undefined
@@ -101,6 +104,36 @@ const stripResponseEnvelope = (response: Rec): Rec => {
   void ok
   void response_metadata
   return rest
+}
+
+// The key under `data` that holds a command's primary payload, mirroring
+// normalizeResponse. `describe` surfaces this so agents know where the result
+// lives (e.g. conversation list returns its array at `data.channels`).
+export const dataKeyFor = (method: string): string | undefined => {
+  switch (method) {
+    case "conversations.history":
+    case "conversations.replies":
+      return "messages"
+    case "conversations.info":
+      return "channel"
+    case "conversations.list":
+      return "channels"
+    case "conversations.members":
+      return "members"
+    case "users.info":
+    case "users.lookupByEmail":
+      return "user"
+    case "users.list":
+      return "users"
+    case "files.info":
+      return "file"
+    case "files.list":
+      return "files"
+    case "team.info":
+      return "team"
+    default:
+      return undefined
+  }
 }
 
 // Normalize a raw Slack Web API response for a given method into slim `data`.

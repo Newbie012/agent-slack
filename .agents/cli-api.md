@@ -209,8 +209,9 @@ normalization and returns the raw Slack objects.
   `tz`, and team fields.
 - **file**: `id`, `name`, `mimetype`, `size`, and `permalink` when present.
   Drops thumbnails and private URLs.
-- **conversation**: `id`, `name`, `is_private`, `is_archived`, `topic`,
-  `purpose`, `num_members` when present.
+- **conversation**: `id`, `name`, `is_private`, `is_archived`, `is_member`,
+  `topic`, `purpose`, `num_members` when present. `is_member` is kept as an
+  explicit boolean so an agent can tell membership from a list.
 - `conversation context` dedupes thread roots already present in `messages` and
   hydrates every unique author, including those who appear only in replies.
 
@@ -302,6 +303,9 @@ Schema output includes:
 
 - command description and examples
 - positional args and flags
+- `dataKey`: the key under the response envelope's `data` that holds the
+  command's primary payload (for example `conversation list` reports
+  `dataKey: "channels"`, so the array is at `data.channels`, not `data`)
 - payload schema when known
 - required Slack method/scopes
 - output schema

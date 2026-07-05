@@ -1,4 +1,5 @@
 import { createRequire } from "node:module"
+import { dataKeyFor } from "../output/normalize.js"
 import type { CommandMetadata } from "./types.js"
 
 const require = createRequire(import.meta.url)
@@ -18,7 +19,7 @@ export const SHORT_COMMAND_NAME = "aslk"
 export const COMMAND_NAMES = [PRIMARY_COMMAND_NAME, SHORT_COMMAND_NAME] as const
 export const CLI_VERSION = packageJson.version ?? "0.0.0"
 
-export const commandMetadata: readonly CommandMetadata[] = [
+const rawCommandMetadata: readonly CommandMetadata[] = [
   {
     path: ["describe"],
     summary: "Print the full command catalog as JSON.",
@@ -298,6 +299,14 @@ export const commandMetadata: readonly CommandMetadata[] = [
     examples: ["agent-slack file download F123 --out ./artifact.pdf --json"]
   }
 ]
+
+// Attach the derived data key so `describe` and `--help --json` tell agents
+// where each command's payload lives under the envelope's `data`.
+export const commandMetadata: readonly CommandMetadata[] = rawCommandMetadata.map((command) => {
+  const method = command.methods?.[0]
+  const dataKey = method === undefined ? undefined : dataKeyFor(method)
+  return dataKey === undefined ? command : { ...command, dataKey }
+})
 
 export const describeAllCommands = () => ({
   name: PRIMARY_COMMAND_NAME,
