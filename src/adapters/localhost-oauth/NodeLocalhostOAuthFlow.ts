@@ -6,7 +6,7 @@ import { AddressInfo } from "node:net"
 import { PermissionDenied, SlackApiFailed, UsageError } from "../../domain/errors.js"
 import { ProfileName, Scope } from "../../domain/ids.js"
 import type { AuthProfile } from "../../domain/slack.js"
-import type { OAuthFlow, OAuthLoginRequest } from "../../ports/OAuthFlow.js"
+import type { OAuthFlow, OAuthLoginRequest, OAuthRefreshRequest, OAuthRefreshResult } from "../../ports/OAuthFlow.js"
 import { AGENT_SLACK_LOGO_DATA_URI, GEIST_WOFF2_DATA_URI } from "./logo.js"
 
 interface OAuthFlowOptions {
@@ -27,6 +27,8 @@ interface SlackOAuthAccessResponse {
   readonly access_token?: string
   readonly token_type?: string
   readonly scope?: string
+  readonly expires_in?: number
+  readonly refresh_token?: string
   readonly bot_user_id?: string
   readonly app_id?: string
   readonly team?: { readonly id?: string; readonly name?: string } | null
@@ -36,6 +38,8 @@ interface SlackOAuthAccessResponse {
     readonly access_token?: string
     readonly token_type?: string
     readonly scope?: string
+    readonly expires_in?: number
+    readonly refresh_token?: string
   }
 }
 
@@ -132,7 +136,12 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
             codeVerifier,
             redirectUri
           })
-          const profile = toAuthProfile(input.profileName, access, input.pkce === true ? "user" : "bot")
+          const profile = toAuthProfile(
+            input.profileName,
+            access,
+            input.pkce === true ? "user" : "bot",
+            input.pkce === true ? { clientId: input.clientId } : undefined
+          )
           clearTimeout(timer)
           // Close the socket after the response so the browser does not hold a
           // keep-alive connection open, then tear down the server once the page
@@ -159,6 +168,35 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
         }
       })
     })
+  }
+
+  async refresh(input: OAuthRefreshRequest): Promise<OAuthRefreshResult> {
+    const response = await fetch(this.options.tokenUrl, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: input.clientId,
+        refresh_token: input.refreshToken
+      })
+    })
+    const body = await response.json() as SlackOAuthAccessResponse
+    if (body.ok === false) {
+      throw new PermissionDenied(`Slack token refresh failed: ${body.error ?? "unknown_error"}`, {
+        slackError: body.error ?? "unknown_error"
+      })
+    }
+    const accessToken = body.authed_user?.access_token ?? body.access_token
+    if (accessToken === undefined) {
+      throw new SlackApiFailed("Slack token refresh did not return an access token")
+    }
+    const refreshToken = body.authed_user?.refresh_token ?? body.refresh_token
+    const expiresIn = body.authed_user?.expires_in ?? body.expires_in
+    return {
+      accessToken,
+      ...(refreshToken === undefined ? {} : { refreshToken }),
+      ...(typeof expiresIn === "number" ? { expiresIn } : {})
+    }
   }
 }
 
@@ -335,7 +373,8 @@ const exchangeCode = async (input: {
 const toAuthProfile = (
   profileName: string,
   response: SlackOAuthAccessResponse,
-  preferredTokenType: "bot" | "user"
+  preferredTokenType: "bot" | "user",
+  rotation?: { readonly clientId: string }
 ): AuthProfile => {
   const botScopes = splitScopes(response.scope)
   const userScopes = splitScopes(response.authed_user?.scope)
@@ -343,6 +382,17 @@ const toAuthProfile = (
   const userToken = response.authed_user?.access_token ?? (rootTokenIsUser ? response.access_token : undefined)
   const useUserToken = preferredTokenType === "user" && userToken !== undefined
   const scopes = useUserToken && userScopes.length > 0 ? userScopes : [...botScopes, ...userScopes]
+  // Capture rotation state only for a public-client (PKCE) user token: refresh
+  // needs client_id + refresh_token and no secret, so we can refresh it later.
+  const refreshToken = response.authed_user?.refresh_token
+  const expiresIn = response.authed_user?.expires_in
+  const rotationFields = rotation !== undefined && useUserToken && refreshToken !== undefined
+    ? {
+        refreshToken,
+        clientId: rotation.clientId,
+        ...(typeof expiresIn === "number" ? { tokenExpiresAt: Math.floor(Date.now() / 1000) + expiresIn } : {})
+      }
+    : {}
   return {
     name: ProfileName.make(profileName),
     tokenType: useUserToken || response.access_token === undefined ? "user" : "bot",
@@ -352,6 +402,7 @@ const toAuthProfile = (
     ...(response.bot_user_id === undefined ? {} : { botId: response.bot_user_id }),
     ...(response.access_token === undefined || useUserToken ? {} : { botToken: response.access_token }),
     ...(userToken === undefined ? {} : { userToken }),
+    ...rotationFields,
     scopes: [...new Set(scopes)].map(Scope.make)
   }
 }

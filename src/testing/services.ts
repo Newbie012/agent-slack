@@ -8,7 +8,7 @@ import type { AuthProfile, SlackCallInput, SlackCallResult } from "../domain/sla
 import type { CliServices } from "../application/services.js"
 import type { TokenStore } from "../ports/TokenStore.js"
 import type { SlackWebApi } from "../ports/SlackWebApi.js"
-import type { OAuthFlow, OAuthLoginRequest } from "../ports/OAuthFlow.js"
+import type { OAuthFlow, OAuthLoginRequest, OAuthRefreshRequest, OAuthRefreshResult } from "../ports/OAuthFlow.js"
 import type { FileDownloader, FileDownloadRequest, FileDownloadResult } from "../ports/FileDownloader.js"
 import { SlackSdkWebApi } from "../adapters/slack-sdk/SlackSdkWebApi.js"
 import type { DriverState } from "./state.js"
@@ -98,6 +98,13 @@ class TestOAuthFlow implements OAuthFlow {
         return true
       }
     }).login(input)
+  }
+
+  async refresh(input: OAuthRefreshRequest): Promise<OAuthRefreshResult> {
+    const tokenUrl = this.state.emulateUrl === null
+      ? "https://slack.com/api/oauth.v2.access"
+      : `${this.state.emulateUrl}/api/oauth.v2.access`
+    return new NodeLocalhostOAuthFlow({ authorizeUrl: "https://slack.com/oauth/v2/authorize", tokenUrl }).refresh(input)
   }
 }
 

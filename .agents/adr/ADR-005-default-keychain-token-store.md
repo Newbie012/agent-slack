@@ -46,7 +46,7 @@ keeps headless macOS working.
 
 - On macOS, new logins store the secret in the Keychain; only metadata lands in
   `~/.config/agent-slack/profiles.keychain.json`.
-- **Headless macOS (SSH, CI) must set `AGENT_SLACK_TOKEN_STORE=file`** — the
+- **Headless macOS (SSH, CI) must set `AGENT_SLACK_TOKEN_STORE=file`**: the
   keychain needs an unlocked login session and can otherwise prompt or fail.
 - No migration: an existing `profiles.json` is not read by the keychain store,
   so a one-time `agent-slack auth login` re-populates the keychain. Acceptable
@@ -55,5 +55,5 @@ keeps headless macOS working.
 ## Revisit When
 
 - A cross-platform secret store (libsecret, Windows Credential Manager) is added
-  — then the keychain default could extend beyond macOS.
+  then the keychain default could extend beyond macOS.
 - Headless macOS becomes a common path and the CI/SSH override is too easy to miss.

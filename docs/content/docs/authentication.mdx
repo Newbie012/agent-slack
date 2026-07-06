@@ -92,6 +92,26 @@ only remove it locally:
 agent-slack auth logout --profile work --yes --no-revoke --json
 ```
 
+<Callout type="info">
+  agent-slack treats the hosted OAuth relay as untrusted: your tokens never pass
+  through it. To remove the relay from the path entirely, or to read the threat
+  model, see [Security](/docs/security).
+</Callout>
+
+## Token rotation
+
+The default browser login (`agent-slack auth login`, PKCE) **auto-refreshes**, so
+you do not log in again and again. When the Slack app rotates tokens, this login
+stores a refresh token and renews the access token just before it expires. Your
+session persists, and a stranded token lapses on its own. If a refresh ever
+fails, the CLI asks you to run `auth login` again instead of using a dead token.
+
+Two non-default cases do not auto-refresh:
+
+- `--oauth` (confidential client): refreshing needs the client secret, which the
+  CLI never stores, so these require `auth login` again when they expire.
+- `--token` (static credential): it never expires, so it needs no refresh.
+
 ## Where tokens are stored
 
 On **macOS**, the token secret is stored in the **Keychain** by default
@@ -102,7 +122,7 @@ are stored in a `0600`-permission file at `~/.config/agent-slack/profiles.json`.
 Override the store with `AGENT_SLACK_TOKEN_STORE`:
 
 ```bash
-# Force the file store — needed on headless macOS (SSH, CI), where the Keychain
+# Force the file store, needed on headless macOS (SSH, CI), where the Keychain
 # would prompt or be unavailable.
 AGENT_SLACK_TOKEN_STORE=file agent-slack auth login
 

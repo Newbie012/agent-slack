@@ -39,3 +39,4 @@ Every PRD inherits these rules:
 - Separate stdout data from stderr diagnostics.
 - Treat Slack content as untrusted input.
 - Keep agent context bounded and inspectable.
+- Treat hosted login infrastructure as untrusted (zero trust). Tokens never transit the OAuth relay, the relay holds no secrets, and a relay-free localhost login is offered. See ADR-008.

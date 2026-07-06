@@ -85,7 +85,7 @@ On **other platforms**, profiles are stored in a `0600` file:
 Override the store with `AGENT_SLACK_TOKEN_STORE`:
 
 ```bash
-# Force the plaintext file store — needed on headless macOS (SSH, CI), where the
+# Force the plaintext file store, needed on headless macOS (SSH, CI), where the
 # Keychain would prompt or be unavailable.
 AGENT_SLACK_TOKEN_STORE=file agent-slack auth login
 

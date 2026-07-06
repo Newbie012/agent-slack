@@ -15,7 +15,9 @@ export interface KeychainSecrets {
   delete(account: string): Promise<void>
 }
 
-type TokenField = "botToken" | "userToken" | "adminToken" | "appToken"
+// Secret fields kept in the keychain. `refreshToken` is a secret too, so it
+// rides the same path as the access tokens.
+type TokenField = "botToken" | "userToken" | "adminToken" | "appToken" | "refreshToken"
 
 interface StoredKeychainProfile {
   readonly name: string
@@ -26,6 +28,9 @@ interface StoredKeychainProfile {
   readonly tokenType: AuthProfile["tokenType"]
   readonly scopes: readonly string[]
   readonly tokenAccounts: Partial<Record<TokenField, string>>
+  // Non-secret rotation metadata lives on disk alongside the accounts map.
+  readonly tokenExpiresAt?: number
+  readonly clientId?: string
 }
 
 interface StoredKeychainProfiles {
@@ -95,7 +100,9 @@ export class KeychainTokenStore implements TokenStore {
       ...(profile.teamId === undefined ? {} : { teamId: profile.teamId }),
       ...(profile.enterpriseId === undefined ? {} : { enterpriseId: profile.enterpriseId }),
       ...(profile.userId === undefined ? {} : { userId: profile.userId }),
-      ...(profile.botId === undefined ? {} : { botId: profile.botId })
+      ...(profile.botId === undefined ? {} : { botId: profile.botId }),
+      ...(profile.tokenExpiresAt === undefined ? {} : { tokenExpiresAt: profile.tokenExpiresAt }),
+      ...(profile.clientId === undefined ? {} : { clientId: profile.clientId })
     }
   }
 
@@ -117,7 +124,10 @@ export class KeychainTokenStore implements TokenStore {
       ...(tokens.botToken == null ? {} : { botToken: tokens.botToken }),
       ...(tokens.userToken == null ? {} : { userToken: tokens.userToken }),
       ...(tokens.adminToken == null ? {} : { adminToken: tokens.adminToken }),
-      ...(tokens.appToken == null ? {} : { appToken: tokens.appToken })
+      ...(tokens.appToken == null ? {} : { appToken: tokens.appToken }),
+      ...(tokens.refreshToken == null ? {} : { refreshToken: tokens.refreshToken }),
+      ...(profile.tokenExpiresAt === undefined ? {} : { tokenExpiresAt: profile.tokenExpiresAt }),
+      ...(profile.clientId === undefined ? {} : { clientId: profile.clientId })
     }
   }
 
@@ -187,7 +197,7 @@ class MacOSSecurityKeychainSecrets implements KeychainSecrets {
   }
 }
 
-const tokenFields = ["botToken", "userToken", "adminToken", "appToken"] as const
+const tokenFields = ["botToken", "userToken", "adminToken", "appToken", "refreshToken"] as const
 
 const accountFor = (profileName: string, field: TokenField): string =>
   `profile:${profileName}:${field}`

@@ -46,4 +46,5 @@ Token setup supports bot-token workflows. OAuth with app credentials is for deve
 - Tokens are never printed to stdout or stderr.
 - Local token storage defaults to the macOS Keychain (encrypted at rest) and falls back to a `0600` file on other platforms; `AGENT_SLACK_TOKEN_STORE` overrides either way.
 - Logging out revokes the token on Slack by default (best-effort) before removing the local profile, so a logout invalidates the credential rather than only forgetting it; `--no-revoke` opts out.
+- When the Slack app uses token rotation, browser (PKCE) logins auto-refresh their expiring token before use and persist the rotated token, so sessions survive expiry without re-login. Confidential (`--oauth`) tokens cannot be refreshed without the client secret (never stored) and require re-login on expiry.
 - `--json` output remains valid JSON and token-free.

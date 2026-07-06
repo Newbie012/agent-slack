@@ -8,7 +8,7 @@
 
 `auth logout` only deleted the local profile. The token stayed valid on Slack
 until it aged out or was revoked by hand in Slack's app management, so "logging
-out" did not actually invalidate the credential — a weak posture for a
+out" did not actually invalidate the credential, a weak posture for a
 credential tool.
 
 ## Decision
@@ -42,7 +42,7 @@ covers the rare case of moving a token elsewhere.
 
 - Logout now makes a network call by default; offline logout still succeeds
   locally with a warning.
-- Once revoked, the token cannot be reused — intended.
+- Once revoked, the token cannot be reused, as intended.
 - A token whose local profile was already deleted cannot be revoked by the CLI
   (the secret is gone); it must be revoked in Slack app management.
 

@@ -65,6 +65,7 @@ Auth behavior:
 - Stores profiles outside the project directory. On macOS the token secret defaults to the **Keychain** (only profile metadata lands on disk, in `~/.config/agent-slack/profiles.keychain.json`); on other platforms it defaults to a `0600` file at `~/.config/agent-slack/profiles.json`. Override with `AGENT_SLACK_TOKEN_STORE=file` (needed for headless macOS such as SSH or CI, where the keychain would prompt) or `AGENT_SLACK_TOKEN_STORE=keychain`.
 - Supports multiple profiles and workspaces.
 - `auth logout` revokes the token on Slack (`auth.revoke`) before deleting the local profile, so the credential is invalidated, not just forgotten. Revocation is best-effort: on failure the local profile is still removed and a warning is returned. `--no-revoke` skips revocation and only removes the profile locally. `logout` requires `--yes`.
+- Token rotation: when the Slack app rotates tokens, browser (PKCE) logins store a `refresh_token` and expiry and auto-refresh the access token just before it expires (`oauth.v2.access` `grant_type=refresh_token`, using the public `client_id`, no secret), persisting the rotated token. A failed refresh returns a `NotAuthenticated` error asking the operator to run `auth login`. Confidential (`--oauth`) tokens are not refreshed (their secret is never stored) and require re-login on expiry.
 - `auth status --json` returns token type, team, enterprise, user/bot identity, granted scopes, and missing recommended scopes.
 
 Scope presets:

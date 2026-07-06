@@ -41,6 +41,43 @@ describe("keychain token store", () => {
       await rm(tempDir, { recursive: true, force: true })
     }
   })
+
+  it("keeps the refresh token in the keychain and rotation metadata on disk", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "agent-slack-keychain-"))
+    const secrets = new MemorySecrets()
+
+    try {
+      // ARRANGE
+      const filePath = join(tempDir, "profiles.keychain.json")
+      const store = new KeychainTokenStore(filePath, secrets)
+
+      // ACT
+      await store.setProfile({
+        name: ProfileName.default,
+        tokenType: "user",
+        userToken: "xoxe.xoxp-secret",
+        refreshToken: "xoxe-1-refresh-secret",
+        tokenExpiresAt: 1_900_000_000,
+        clientId: "11499810382723.11506074725874",
+        scopes: [Scope.make("channels:read")]
+      })
+      const raw = await readFile(filePath, "utf8")
+      const profile = await store.getProfile("default")
+
+      // ASSERT: the refresh token is a secret (not on disk); metadata is on disk.
+      expect(raw).not.toContain("xoxe-1-refresh-secret")
+      expect(raw).toContain("1900000000")
+      expect(raw).toContain("11499810382723.11506074725874")
+      expect(profile).toMatchObject({
+        userToken: "xoxe.xoxp-secret",
+        refreshToken: "xoxe-1-refresh-secret",
+        tokenExpiresAt: 1_900_000_000,
+        clientId: "11499810382723.11506074725874"
+      })
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
 })
 
 class MemorySecrets implements KeychainSecrets {

@@ -14,6 +14,13 @@ export interface AuthProfile {
   readonly adminToken?: string
   readonly appToken?: string
   readonly scopes: readonly Scope[]
+  // Token rotation (PKCE/public-client logins only). `refreshToken` is a secret
+  // used to mint a new access token; `tokenExpiresAt` is epoch seconds for when
+  // the current access token expires; `clientId` is the public client used to
+  // refresh (no secret needed). Absent for static and confidential logins.
+  readonly refreshToken?: string
+  readonly tokenExpiresAt?: number
+  readonly clientId?: string
 }
 
 export interface SlackCallInput {

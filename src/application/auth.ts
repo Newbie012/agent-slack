@@ -2,12 +2,47 @@ import { NotAuthenticated, UnsafeMethodBlocked, UsageError } from "../domain/err
 import type { AuthProfile, TokenType } from "../domain/slack.js"
 import type { CliServices } from "./services.js"
 
+// Refresh a rotating token slightly before it expires so calls don't fail on a
+// just-expired token.
+const REFRESH_SKEW_SECONDS = 120
+
+// For a refreshable (PKCE/public-client) profile whose access token is expired
+// or about to expire, mint a fresh token, persist it, and return the updated
+// profile. Non-rotating profiles pass through untouched. A failed refresh means
+// the session is dead, so surface a re-login error rather than a stale token.
+const ensureFreshTokens = async (services: CliServices, profile: AuthProfile): Promise<AuthProfile> => {
+  if (profile.refreshToken === undefined || profile.clientId === undefined || profile.tokenExpiresAt === undefined) {
+    return profile
+  }
+  const now = Math.floor(Date.now() / 1000)
+  if (profile.tokenExpiresAt - REFRESH_SKEW_SECONDS > now) {
+    return profile
+  }
+  let refreshed
+  try {
+    refreshed = await services.oauthFlow.refresh({ clientId: profile.clientId, refreshToken: profile.refreshToken })
+  } catch {
+    throw new NotAuthenticated(
+      `Slack session for profile ${profile.name} expired and could not be refreshed. Run agent-slack auth login.`,
+      { profile: profile.name }
+    )
+  }
+  const updated: AuthProfile = {
+    ...profile,
+    userToken: refreshed.accessToken,
+    ...(refreshed.refreshToken === undefined ? {} : { refreshToken: refreshed.refreshToken }),
+    ...(refreshed.expiresIn === undefined ? {} : { tokenExpiresAt: now + refreshed.expiresIn })
+  }
+  await services.tokenStore.setProfile(updated)
+  return updated
+}
+
 export const getProfile = async (services: CliServices, name: string): Promise<AuthProfile> => {
   const profile = await services.tokenStore.getProfile(name)
   if (profile === null) {
     throw new NotAuthenticated(`No auth profile named ${name}`, { profile: name })
   }
-  return profile
+  return ensureFreshTokens(services, profile)
 }
 
 export const tokenFor = (profile: AuthProfile, tokenType: TokenType): string => {

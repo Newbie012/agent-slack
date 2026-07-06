@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { AGENT_SLACK_LOGO_DATA_URI, GEIST_WOFF2_DATA_URI } from "./logo"
 
 const defaultLocalCallbackUrl = "http://localhost:45454/oauth/slack/callback"
@@ -15,10 +16,28 @@ export default function handler(request: { readonly query: Record<string, unknow
     }
   }
 
+  // Zero-trust hardening: a per-request nonce plus a strict CSP so that even if
+  // the served HTML were tampered with, injected scripts/styles without the
+  // nonce cannot run. Only self-contained data: assets and the nonced inline
+  // script/style are allowed. See docs/content/docs/security.mdx.
+  const nonce = randomUUID()
   response.statusCode = 200
   response.setHeader("content-type", "text/html; charset=utf-8")
   response.setHeader("cache-control", "no-store")
-  response.end(renderPage(target.toString()))
+  response.setHeader(
+    "content-security-policy",
+    [
+      "default-src 'none'",
+      "img-src data:",
+      "font-src data:",
+      `style-src 'nonce-${nonce}'`,
+      `script-src 'nonce-${nonce}'`,
+      "base-uri 'none'",
+      "form-action 'none'"
+    ].join("; ")
+  )
+  response.setHeader("referrer-policy", "no-referrer")
+  response.end(renderPage(target.toString(), nonce))
 }
 
 const localCallbackUrl = (): URL => {
@@ -43,13 +62,13 @@ const firstQueryValue = (value: unknown): string | undefined => {
   return undefined
 }
 
-const renderPage = (targetUrl: string): string => `<!doctype html>
+const renderPage = (targetUrl: string, nonce: string): string => `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agent Slack</title>
-    <style>
+    <style nonce="${nonce}">
       @font-face {
         font-family: "Geist";
         src: url(${GEIST_WOFF2_DATA_URI}) format("woff2");
@@ -71,7 +90,7 @@ const renderPage = (targetUrl: string): string => `<!doctype html>
       }
       main { width: min(520px, 100%); text-align: center; }
       /* Reserve consistent height below the logo so this page and the CLI's
-         success page center identically — the logo does not jump on redirect. */
+         success page center identically, so the logo does not jump on redirect. */
       .copy { min-height: 4.5em; }
       .logo {
         width: 76px; height: 76px; display: block; margin: 0 auto 24px;
@@ -87,7 +106,7 @@ const renderPage = (targetUrl: string): string => `<!doctype html>
       }
       @media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
     </style>
-    <script>
+    <script nonce="${nonce}">
       location.replace(${JSON.stringify(targetUrl)});
     </script>
   </head>

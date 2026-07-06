@@ -14,6 +14,19 @@ export interface OAuthLoginRequest {
   readonly openBrowser?: boolean | undefined
 }
 
+export interface OAuthRefreshRequest {
+  readonly clientId: string
+  readonly refreshToken: string
+}
+
+export interface OAuthRefreshResult {
+  readonly accessToken: string
+  readonly refreshToken?: string
+  readonly expiresIn?: number
+}
+
 export interface OAuthFlow {
   login(input: OAuthLoginRequest): Promise<AuthProfile>
+  // Exchange a refresh token for a fresh access token (public-client rotation).
+  refresh(input: OAuthRefreshRequest): Promise<OAuthRefreshResult>
 }
