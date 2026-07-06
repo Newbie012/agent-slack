@@ -203,19 +203,19 @@ interface GuideItem {
 const installCommand = 'npm i -g @eliya-oss/agent-slack';
 const skillCommand = 'npx skills add Newbie012/agent-slack --skill agent-slack';
 
-const setupPrompt = `Use agent-slack when you need Slack context.
+const setupPrompt = `You now have Slack access through the agent-slack CLI. Get set up now, then use it whenever a later task needs Slack context. You do not need a Slack task yet; just set up and confirm you are ready.
 
-Install the skill so your agent knows how to use it:
-npx skills add Newbie012/agent-slack --skill agent-slack
+Set up (skip any step already done):
+1. Install the skill so you know how to drive the CLI:
+   npx skills add Newbie012/agent-slack --skill agent-slack
+2. Install the CLI:
+   npm install -g @eliya-oss/agent-slack
+3. Check auth: agent-slack auth status --json
+   If it is not authenticated, ask me to run agent-slack auth login (it opens a browser). Do not run auth login yourself.
 
-Install the CLI it drives:
-npm install -g @eliya-oss/agent-slack
+Then tell me you are set up and ready.
 
-Authenticate:
-agent-slack auth login
-agent-slack auth status --json
-
-Discover commands with \`agent-slack describe --json\`: every command, its flags, and the data key results land under. Read Slack as structured JSON (the default, and token-efficient: slim, compact shapes) or NDJSON for large streams. Keep payloads small with bounded reads (--limit, --since) and one-call --include instead of many round-trips; skip --pretty and --full unless a human is reading. Data goes to stdout, diagnostics to stderr, and everything stays within your Slack scopes and channel permissions.`;
+When a later task needs Slack: run agent-slack describe --json to see every command, its flags, and the data key results land under. Read as structured JSON (the token-efficient default: slim, compact shapes) or NDJSON for large streams. Keep payloads small with bounded reads (--limit, --since) and one-call --include instead of many round-trips; skip --pretty and --full unless a human is reading. Data goes to stdout, diagnostics to stderr, all within your Slack scopes and channel permissions.`;
 
 const quickStart = `agent-slack auth login
 agent-slack auth status --json
