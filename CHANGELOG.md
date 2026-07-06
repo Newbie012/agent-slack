@@ -1,5 +1,16 @@
 # @eliya-oss/agent-slack
 
+## 0.1.15
+
+### Patch Changes
+
+- a5d16e5: Make the bundled agent-slack skill agent-agnostic. The skill description no longer names a specific agent and instead lists the Slack contexts that should trigger it (reading or summarizing a thread or channel, finding a message, checking membership, pulling Slack context), which improves how reliably any agent picks it up. Also dropped a local-repo dev note that was noise for installed users.
+- 75f96ad: Fix `agent-slack auth login` hanging after approval, and brand the callback page.
+
+  Previously the CLI process could hang after a successful browser login because the local callback server kept a keep-alive socket open. It now closes the connection and exits cleanly.
+
+  The page shown in the browser after approval is also branded instead of an unstyled line of text: a dark, centered page with the Agent Slack logo that blooms from grayscale to color on success (and stays grayscale on failure, with a message telling you to return to the terminal and retry). It respects `prefers-reduced-motion`.
+
 ## 0.1.14
 
 ### Patch Changes
