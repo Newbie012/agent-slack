@@ -207,10 +207,15 @@ export class EmulateTestDriver {
       const callback = new URL(options.localCallbackUrl)
       callback.search = redirected.search
       const callbackResponse = await fetch(callback)
+      const callbackBody = await callbackResponse.text()
       if (!callbackResponse.ok) {
-        throw new Error(`Local OAuth callback failed with ${callbackResponse.status}: ${await callbackResponse.text()}`)
+        throw new Error(`Local OAuth callback failed with ${callbackResponse.status}: ${callbackBody}`)
       }
-      return
+      return {
+        status: callbackResponse.status,
+        contentType: callbackResponse.headers.get("content-type"),
+        body: callbackBody
+      }
     }
     if (!response.ok) {
       throw new Error(`Emulate OAuth install failed with ${response.status}: ${await response.text()}`)

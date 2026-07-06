@@ -132,12 +132,22 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
             redirectUri
           })
           const profile = toAuthProfile(input.profileName, access, input.pkce === true ? "user" : "bot")
-          response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end("<html><body>Slack auth complete. You can close this tab.</body></html>")
+          response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(
+            renderCallbackPage({
+              title: "Slack connected",
+              body: "Agent Slack saved your Slack profile. You can close this tab and return to the terminal."
+            })
+          )
           clearTimeout(timer)
           closeServer(server)
           resolve(profile)
         } catch (error) {
-          response.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end(error instanceof Error ? error.message : String(error))
+          response.writeHead(400, { "content-type": "text/html; charset=utf-8" }).end(
+            renderCallbackPage({
+              title: "Slack authentication failed",
+              body: `${error instanceof Error ? error.message : String(error)} Return to the terminal and run agent-slack auth login again.`
+            })
+          )
           clearTimeout(timer)
           closeServer(server)
           reject(error)
@@ -146,6 +156,45 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
     })
   }
 }
+
+// Branded callback page shown in the browser after Slack approval. Matches the
+// hosted relay's look (apps/oauth-relay) so the round trip feels like one flow.
+const renderCallbackPage = (input: { readonly title: string; readonly body: string }): string => `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Slack</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #000;
+        color: #fff;
+        font: 16px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+      main { width: min(520px, calc(100vw - 48px)); }
+      h1 { margin: 0 0 12px; font-size: 20px; font-weight: 700; }
+      p { margin: 0; color: #cfcfcf; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>${escapeHtml(input.title)}</h1>
+      <p>${escapeHtml(input.body)}</p>
+    </main>
+  </body>
+</html>`
+
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
 
 const listen = (
   server: ReturnType<typeof createServer>,

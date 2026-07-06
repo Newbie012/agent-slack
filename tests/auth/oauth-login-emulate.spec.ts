@@ -90,6 +90,28 @@ describe("auth oauth login with Emulate", () => {
     })
   })
 
+  it("serves a branded HTML success page on the local callback", async () => {
+    await using driver = await SlackCliTestDriver.create()
+
+    // ARRANGE
+    await driver.emulate.start()
+    const localCallbackUrl = "http://localhost:45454/oauth/slack/callback"
+
+    // ACT
+    const login = driver.cli.runJson({
+      args: ["auth", "login", "--client-id", "12345.67890", "--timeout-ms", "5000", "--json"]
+    })
+    const authorizationUrl = await waitForOpenedOAuthUrl(driver)
+    const callback = await driver.emulate.completeOAuthInstall({ authorizationUrl, localCallbackUrl })
+    await login
+
+    // ASSERT
+    expect(callback?.contentType).toContain("text/html")
+    expect(callback?.body).toContain("<style")
+    expect(callback?.body).toContain("Slack connected")
+    expect(callback?.body).toContain("Agent Slack")
+  })
+
   it("uses the bundled HTTPS relay for default browser login", async () => {
     await using driver = await SlackCliTestDriver.create()
 
