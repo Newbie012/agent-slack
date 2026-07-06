@@ -81,7 +81,34 @@ Delete a profile:
 agent-slack auth logout --profile work --yes --json
 ```
 
-`logout` is destructive and requires `--yes`.
+`logout` is destructive and requires `--yes`. By default it also **revokes the
+token on Slack** (via `auth.revoke`) before removing the local profile, so the
+credential is actually invalidated and not just forgotten. If revocation fails
+(offline, or the token is already invalid) the local profile is still removed and
+a warning is returned. Pass `--no-revoke` to keep the token valid on Slack and
+only remove it locally:
+
+```bash
+agent-slack auth logout --profile work --yes --no-revoke --json
+```
+
+## Where tokens are stored
+
+On **macOS**, the token secret is stored in the **Keychain** by default
+(encrypted at rest); only profile metadata is written to
+`~/.config/agent-slack/profiles.keychain.json`. On **other platforms**, profiles
+are stored in a `0600`-permission file at `~/.config/agent-slack/profiles.json`.
+
+Override the store with `AGENT_SLACK_TOKEN_STORE`:
+
+```bash
+# Force the file store — needed on headless macOS (SSH, CI), where the Keychain
+# would prompt or be unavailable.
+AGENT_SLACK_TOKEN_STORE=file agent-slack auth login
+
+# Force the Keychain (macOS only).
+AGENT_SLACK_TOKEN_STORE=keychain agent-slack auth login
+```
 
 ## Token type
 

@@ -72,19 +72,26 @@ agent-slack completion bash
 
 ## Local token storage
 
-By default, profiles are stored under:
+On **macOS**, the token secret is stored in the **Keychain** by default (encrypted
+at rest); only profile metadata is written to disk, under
+`~/.config/agent-slack/profiles.keychain.json`.
+
+On **other platforms**, profiles are stored in a `0600` file:
 
 ```
 ~/.config/agent-slack/profiles.json
 ```
 
-On macOS, store token secrets in Keychain:
+Override the store with `AGENT_SLACK_TOKEN_STORE`:
 
 ```bash
+# Force the plaintext file store — needed on headless macOS (SSH, CI), where the
+# Keychain would prompt or be unavailable.
+AGENT_SLACK_TOKEN_STORE=file agent-slack auth login
+
+# Force the Keychain (macOS only).
 AGENT_SLACK_TOKEN_STORE=keychain agent-slack auth login
 ```
-
-Profile metadata still lives under the Agent Slack config directory.
 
 ## Next step
 

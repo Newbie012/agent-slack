@@ -211,10 +211,35 @@ const authCommand = async (parsed: ParsedArgs, services: CliServices): Promise<D
   }
   if (second === "logout") {
     requireYes({ yes: flagBoolean(parsed, "yes"), message: "Refusing to delete auth profile without --yes" })
+    const warnings: string[] = []
+    let revoked = false
+    if (!flagBoolean(parsed, "no-revoke")) {
+      // Revoke the token on Slack before forgetting it locally, so logout
+      // actually invalidates the credential. Best-effort: a failed revoke
+      // (offline, already-invalid token) still lets the local logout proceed.
+      const profile = await services.tokenStore.getProfile(profileName)
+      const tokens = uniqueStrings([
+        profile?.botToken,
+        profile?.userToken,
+        profile?.adminToken,
+        profile?.appToken
+      ])
+      if (tokens.length > 0) {
+        const outcomes = await Promise.all(tokens.map((token) => revokeSlackToken(services, token)))
+        revoked = outcomes.every(Boolean)
+        if (!revoked) {
+          warnings.push(
+            "Could not revoke the Slack token on Slack's side; the profile was still removed locally. Revoke it from Slack app management if needed."
+          )
+        }
+      }
+    }
+    const deleted = await services.tokenStore.deleteProfile(profileName)
     return {
       method: "auth.logout",
       profile: null,
-      stdoutValue: { deleted: await services.tokenStore.deleteProfile(profileName), profile: profileName }
+      stdoutValue: { deleted, profile: profileName, revoked },
+      ...(warnings.length > 0 ? { warnings } : {})
     }
   }
   if (second === "status" || second === "scopes") {
@@ -824,3 +849,15 @@ const recordsFromMap = (
   toRecord: (key: string, entry: unknown) => unknown
 ): readonly unknown[] =>
   Object.entries(extractLooseRecord(value)).map(([key, entry]) => toRecord(key, entry))
+
+// Best-effort revoke of a token on Slack (auth.revoke revokes the calling
+// token). Returns whether Slack confirmed the revoke; never throws, so logout
+// can continue to remove the local profile even if this fails.
+const revokeSlackToken = async (services: CliServices, token: string): Promise<boolean> => {
+  try {
+    const result = await services.slackWebApi.call({ method: "auth.revoke", token, payload: {} })
+    return (result.response as { readonly ok?: unknown }).ok === true
+  } catch {
+    return false
+  }
+}

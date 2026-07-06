@@ -44,5 +44,6 @@ Token setup supports bot-token workflows. OAuth with app credentials is for deve
 - Default local callback is `http://localhost:45454/oauth/slack/callback`.
 - No client secret is embedded in the CLI.
 - Tokens are never printed to stdout or stderr.
-- Local token storage keeps current file/keychain behavior.
+- Local token storage defaults to the macOS Keychain (encrypted at rest) and falls back to a `0600` file on other platforms; `AGENT_SLACK_TOKEN_STORE` overrides either way.
+- Logging out revokes the token on Slack by default (best-effort) before removing the local profile, so a logout invalidates the credential rather than only forgetting it; `--no-revoke` opts out.
 - `--json` output remains valid JSON and token-free.

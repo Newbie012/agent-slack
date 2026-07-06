@@ -74,8 +74,8 @@ const rawCommandMetadata: readonly CommandMetadata[] = [
   },
   {
     path: ["auth", "logout"],
-    summary: "Delete a local Slack profile.",
-    flags: ["--profile", "--json"],
+    summary: "Revoke the token on Slack and delete the local profile.",
+    flags: ["--profile", "--yes", "--no-revoke", "--json"],
     safety: "destructive",
     output: "deleted profile status",
     examples: ["agent-slack auth logout --profile work --yes --json"]

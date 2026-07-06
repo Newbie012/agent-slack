@@ -62,8 +62,9 @@ Auth behavior:
 - Distributed Slack apps use `https://aslk.vercel.app/oauth/slack/callback` as the HTTPS relay redirect URI. The relay forwards Slack's `code` and `state` to the local callback.
 - PKCE uses `user_scope=...`; OAuth with app credentials uses `scope=...` for bot scopes.
 - Default local callback: `http://localhost:45454/oauth/slack/callback`.
-- Stores profiles outside the project directory. The default store is `~/.config/agent-slack/profiles.json`; set `AGENT_SLACK_TOKEN_STORE=keychain` on macOS to keep token secrets in Keychain and only profile metadata on disk.
+- Stores profiles outside the project directory. On macOS the token secret defaults to the **Keychain** (only profile metadata lands on disk, in `~/.config/agent-slack/profiles.keychain.json`); on other platforms it defaults to a `0600` file at `~/.config/agent-slack/profiles.json`. Override with `AGENT_SLACK_TOKEN_STORE=file` (needed for headless macOS such as SSH or CI, where the keychain would prompt) or `AGENT_SLACK_TOKEN_STORE=keychain`.
 - Supports multiple profiles and workspaces.
+- `auth logout` revokes the token on Slack (`auth.revoke`) before deleting the local profile, so the credential is invalidated, not just forgotten. Revocation is best-effort: on failure the local profile is still removed and a warning is returned. `--no-revoke` skips revocation and only removes the profile locally. `logout` requires `--yes`.
 - `auth status --json` returns token type, team, enterprise, user/bot identity, granted scopes, and missing recommended scopes.
 
 Scope presets:

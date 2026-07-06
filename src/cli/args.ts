@@ -14,6 +14,7 @@ const booleanFlags = new Set([
   "trace",
   "yes",
   "no-cache",
+  "no-revoke",
   "inclusive",
   "oauth",
   "no-open"
