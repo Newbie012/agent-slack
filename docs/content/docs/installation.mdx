@@ -50,6 +50,19 @@ Or use the short alias:
 aslk describe --json
 ```
 
+## Install the skill (for agents)
+
+If your agent supports [Agent Skills](https://skills.sh), add the bundled
+`agent-slack` skill so it knows when to reach for the CLI and how to drive it:
+
+```bash
+npx skills add Newbie012/agent-slack --skill agent-slack
+```
+
+The skill teaches the read-first workflow, auth steps, and output conventions.
+It complements the CLI binary above, so install both: the skill is the guidance,
+the CLI is the tool.
+
 ## Shell completion
 
 ```bash

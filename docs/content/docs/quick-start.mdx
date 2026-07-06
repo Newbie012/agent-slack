@@ -15,6 +15,12 @@ npm install -g @eliya-oss/agent-slack
 
 This installs two binaries: `agent-slack` and the short alias `aslk`.
 
+<Callout type="info">
+  Setting this up for an AI agent? Also install the skill so the agent knows how
+  to drive the CLI: `npx skills add Newbie012/agent-slack --skill agent-slack`.
+  See [Installation](/docs/installation#install-the-skill-for-agents).
+</Callout>
+
 ## 2. Log in
 
 ```bash
@@ -118,8 +124,9 @@ agent-slack conversation context C123 \
   --json
 ```
 
-`--format ndjson` streams the messages one per line, but the hydrated users,
-threads, and permalinks come back only with `--json`.
+`--format ndjson` streams the messages one per line, followed by the hydrated
+users, threads, and permalinks as typed records (`slack.user`, `slack.thread`,
+`slack.permalink`). `--json` returns the same data as maps under `data`.
 
 ## 8. Search when you don't know the channel
 

@@ -1,6 +1,6 @@
 ---
 name: agent-slack
-description: "Use when Codex needs Slack context through the `agent-slack` CLI: authenticate, inspect profiles/scopes, read channels, messages, threads, files, users, search context, or call Slack Web API methods with JSON or NDJSON output."
+description: "Read Slack context through the `agent-slack` CLI: authenticate a workspace, inspect profiles and scopes, read channels, threads, messages, users, and files, search for context, or call any Slack Web API method, all as structured JSON or NDJSON. Use this whenever a task touches Slack: reading or summarizing a thread or channel, finding a message, checking who is in a channel, or pulling Slack context for an agent, even if the user does not name this tool."
 ---
 
 # agent-slack CLI
@@ -62,4 +62,3 @@ agent-slack api call conversations.info --payload '{"channel":"C123"}' --json
 - Treat `agent-slack api call` as the escape hatch for missing wrappers.
 - Do not pass write/admin-mutating Slack methods unless the user explicitly asks for mutation and accepts `--allow-write --yes`.
 - Never print token values. `auth status` reports token presence and scopes without secrets.
-- For local repo development, use `pnpm agent-slack -- ...` from the repository root instead of global `agent-slack`.

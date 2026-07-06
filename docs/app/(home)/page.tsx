@@ -47,6 +47,29 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-b border-fd-border px-6 py-12 md:py-16">
+        <div className="mx-auto max-w-4xl">
+          <div className="home-subtle mb-3 text-sm font-medium">For AI agents</div>
+          <h2 className="text-xl font-medium text-fd-foreground md:text-2xl">
+            Give your agent Slack access
+          </h2>
+          <p className="home-muted mt-4 max-w-3xl text-base leading-7">
+            Install the skill so your agent knows when to reach for agent-slack and
+            how to drive it, with the read-first workflow and output conventions
+            built in.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <CopyButton
+              text={skillCommand}
+              label={skillCommand}
+              copiedLabel="Copied"
+              className="btn-outline font-mono"
+              showIcon={false}
+            />
+          </div>
+        </div>
+      </section>
+
       <GuideSection
         title="What it gives you"
         description="A small set of Slack reads, wrapped for terminal use and agent handoff."
@@ -178,17 +201,21 @@ interface GuideItem {
 }
 
 const installCommand = 'npm i -g @eliya-oss/agent-slack';
+const skillCommand = 'npx skills add Newbie012/agent-slack --skill agent-slack';
 
 const setupPrompt = `Use agent-slack when you need Slack context.
 
-Install it:
+Install the skill so your agent knows how to use it:
+npx skills add Newbie012/agent-slack --skill agent-slack
+
+Install the CLI it drives:
 npm install -g @eliya-oss/agent-slack
 
-Start with:
+Authenticate:
 agent-slack auth login
 agent-slack auth status --json
 
-Read Slack through structured JSON or NDJSON. Keep data on stdout, diagnostics on stderr, and respect Slack scopes and channel permissions.`;
+Discover commands with \`agent-slack describe --json\`: every command, its flags, and the data key results land under. Read Slack as structured JSON (the default, and token-efficient: slim, compact shapes) or NDJSON for large streams. Keep payloads small with bounded reads (--limit, --since) and one-call --include instead of many round-trips; skip --pretty and --full unless a human is reading. Data goes to stdout, diagnostics to stderr, and everything stays within your Slack scopes and channel permissions.`;
 
 const quickStart = `agent-slack auth login
 agent-slack auth status --json
