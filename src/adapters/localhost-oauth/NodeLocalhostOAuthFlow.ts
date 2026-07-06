@@ -7,6 +7,7 @@ import { PermissionDenied, SlackApiFailed, UsageError } from "../../domain/error
 import { ProfileName, Scope } from "../../domain/ids.js"
 import type { AuthProfile } from "../../domain/slack.js"
 import type { OAuthFlow, OAuthLoginRequest } from "../../ports/OAuthFlow.js"
+import { AGENT_SLACK_LOGO_DATA_URI, GEIST_WOFF2_DATA_URI } from "./logo.js"
 
 interface OAuthFlowOptions {
   readonly authorizeUrl: string
@@ -132,24 +133,28 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
             redirectUri
           })
           const profile = toAuthProfile(input.profileName, access, input.pkce === true ? "user" : "bot")
-          response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(
-            renderCallbackPage({
-              title: "Slack connected",
-              body: "Agent Slack saved your Slack profile. You can close this tab and return to the terminal."
-            })
-          )
           clearTimeout(timer)
-          closeServer(server)
+          // Close the socket after the response so the browser does not hold a
+          // keep-alive connection open, then tear down the server once the page
+          // has flushed. Otherwise the CLI process hangs after a successful login.
+          response.writeHead(200, { "content-type": "text/html; charset=utf-8", "connection": "close" }).end(
+            renderCallbackPage({
+              tone: "success",
+              title: "Slack connected"
+            }),
+            () => closeServer(server)
+          )
           resolve(profile)
         } catch (error) {
-          response.writeHead(400, { "content-type": "text/html; charset=utf-8" }).end(
+          clearTimeout(timer)
+          response.writeHead(400, { "content-type": "text/html; charset=utf-8", "connection": "close" }).end(
             renderCallbackPage({
+              tone: "error",
               title: "Slack authentication failed",
               body: `${error instanceof Error ? error.message : String(error)} Return to the terminal and run agent-slack auth login again.`
-            })
+            }),
+            () => closeServer(server)
           )
-          clearTimeout(timer)
-          closeServer(server)
           reject(error)
         }
       })
@@ -158,33 +163,64 @@ export class NodeLocalhostOAuthFlow implements OAuthFlow {
 }
 
 // Branded callback page shown in the browser after Slack approval. Matches the
-// hosted relay's look (apps/oauth-relay) so the round trip feels like one flow.
-const renderCallbackPage = (input: { readonly title: string; readonly body: string }): string => `<!doctype html>
+// hosted relay's look (apps/oauth-relay) so the round trip feels like one flow:
+// the relay shows the logo in grayscale while pending, and this page blooms it
+// to full color on success (and leaves it grayscale on failure).
+const renderCallbackPage = (input: {
+  readonly title: string
+  readonly body?: string
+  readonly tone: "success" | "error"
+}): string => `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agent Slack</title>
     <style>
+      @font-face {
+        font-family: "Geist";
+        src: url(${GEIST_WOFF2_DATA_URI}) format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
       :root { color-scheme: dark; }
       body {
         margin: 0;
         min-height: 100vh;
+        box-sizing: border-box;
         display: grid;
         place-items: center;
+        padding: 24px;
         background: #000;
         color: #fff;
-        font: 16px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font: 16px/1.6 "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       }
-      main { width: min(520px, calc(100vw - 48px)); }
-      h1 { margin: 0 0 12px; font-size: 20px; font-weight: 700; }
+      main { width: min(520px, 100%); text-align: center; }
+      .logo { width: 76px; height: 76px; display: block; margin: 0 auto 24px; }
+      /* Reserve consistent height below the logo so this page and the relay's
+         pending page center identically — the logo does not jump on redirect. */
+      .copy { min-height: 4.5em; }
+      h1 { margin: 0 0 12px; font-size: 20px; font-weight: 400; }
       p { margin: 0; color: #cfcfcf; }
+      .success .logo { animation: bloom 900ms ease-out both; }
+      .error .logo { filter: grayscale(1); opacity: 0.55; }
+      @keyframes bloom {
+        from { filter: grayscale(1); opacity: 0.5; transform: scale(0.94); }
+        to   { filter: grayscale(0); opacity: 1;   transform: scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .success .logo { animation: none; }
+      }
     </style>
   </head>
-  <body>
+  <body class="${input.tone}">
     <main>
-      <h1>${escapeHtml(input.title)}</h1>
-      <p>${escapeHtml(input.body)}</p>
+      <img class="logo" alt="Agent Slack" src="${AGENT_SLACK_LOGO_DATA_URI}">
+      <div class="copy">
+        <h1>${escapeHtml(input.title)}</h1>
+        ${input.body === undefined ? "" : `<p>${escapeHtml(input.body)}</p>`}
+      </div>
     </main>
   </body>
 </html>`
@@ -328,6 +364,9 @@ const splitScopes = (value: string | undefined): readonly string[] =>
 
 const closeServer = (server: ReturnType<typeof createServer>): void => {
   server.close()
+  // Destroy any lingering keep-alive sockets (the callback page, a favicon
+  // request) so no open handle keeps the CLI process alive after login.
+  server.closeAllConnections()
 }
 
 const openSystemBrowser = (url: string): Promise<boolean> =>

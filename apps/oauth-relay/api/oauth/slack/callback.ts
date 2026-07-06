@@ -1,3 +1,5 @@
+import { AGENT_SLACK_LOGO_DATA_URI, GEIST_WOFF2_DATA_URI } from "./logo"
+
 const defaultLocalCallbackUrl = "http://localhost:45454/oauth/slack/callback"
 
 export default function handler(request: { readonly query: Record<string, unknown> }, response: {
@@ -48,20 +50,42 @@ const renderPage = (targetUrl: string): string => `<!doctype html>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Agent Slack</title>
     <style>
+      @font-face {
+        font-family: "Geist";
+        src: url(${GEIST_WOFF2_DATA_URI}) format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: swap;
+      }
       :root { color-scheme: dark; }
       body {
         margin: 0;
         min-height: 100vh;
+        box-sizing: border-box;
         display: grid;
         place-items: center;
+        padding: 24px;
         background: #000;
         color: #fff;
-        font: 16px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font: 16px/1.6 "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       }
-      main { width: min(520px, calc(100vw - 48px)); }
-      h1 { margin: 0 0 12px; font-size: 20px; font-weight: 700; letter-spacing: 0; }
+      main { width: min(520px, 100%); text-align: center; }
+      /* Reserve consistent height below the logo so this page and the CLI's
+         success page center identically — the logo does not jump on redirect. */
+      .copy { min-height: 4.5em; }
+      .logo {
+        width: 76px; height: 76px; display: block; margin: 0 auto 24px;
+        filter: grayscale(1); opacity: 0.6;
+        animation: pending 1.6s ease-in-out infinite;
+      }
+      h1 { margin: 0 0 12px; font-size: 20px; font-weight: 400; letter-spacing: 0; }
       p { margin: 0 0 18px; color: #cfcfcf; }
       a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+      @keyframes pending {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 0.8; }
+      }
+      @media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
     </style>
     <script>
       location.replace(${JSON.stringify(targetUrl)});
@@ -69,9 +93,11 @@ const renderPage = (targetUrl: string): string => `<!doctype html>
   </head>
   <body>
     <main>
-      <h1>Returning to Agent Slack</h1>
-      <p>Keep the terminal open. This tab will hand the Slack approval back to the CLI.</p>
-      <a href="${escapeHtml(targetUrl)}">Continue manually</a>
+      <img class="logo" alt="Agent Slack" src="${AGENT_SLACK_LOGO_DATA_URI}">
+      <div class="copy">
+        <h1>Returning to Agent Slack</h1>
+        <a href="${escapeHtml(targetUrl)}">Continue manually</a>
+      </div>
     </main>
   </body>
 </html>`

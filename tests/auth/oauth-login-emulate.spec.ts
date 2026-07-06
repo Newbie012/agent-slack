@@ -110,6 +110,9 @@ describe("auth oauth login with Emulate", () => {
     expect(callback?.body).toContain("<style")
     expect(callback?.body).toContain("Slack connected")
     expect(callback?.body).toContain("Agent Slack")
+    // Branded logo, inlined, animating from grayscale to color on success.
+    expect(callback?.body).toContain("data:image/png;base64")
+    expect(callback?.body).toContain("grayscale")
   })
 
   it("uses the bundled HTTPS relay for default browser login", async () => {
