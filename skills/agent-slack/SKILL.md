@@ -11,7 +11,7 @@ Use `agent-slack` as the Slack context boundary. `aslk` is the short alias. Pref
 
 1. Check availability: `agent-slack describe --json`.
 2. Check auth: `agent-slack auth status --json`.
-3. If auth is missing, ask the user to run `agent-slack auth login`. It opens Slack in the browser with PKCE and stores a local Slack profile.
+3. If auth is missing, offer to run `agent-slack auth login` for the user. It opens their browser to approve with PKCE and stores a local Slack profile; run it once they agree, then re-check `auth status`.
 4. Use specific read commands before raw API calls.
 5. Use `--json` for bounded results and `--format ndjson` for large context streams.
 6. Read structured errors from stderr; do not parse progress text from stdout.

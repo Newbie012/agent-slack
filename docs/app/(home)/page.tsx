@@ -211,7 +211,7 @@ Set up (skip any step already done):
 2. Install the CLI:
    npm install -g @eliya-oss/agent-slack
 3. Check auth: agent-slack auth status --json
-   If it is not authenticated, ask me to run agent-slack auth login (it opens a browser). Do not run auth login yourself.
+   If it is not authenticated, ask me whether you should run agent-slack auth login for me. It opens my browser so I can approve; run it once I say yes, then re-check status.
 
 Then tell me you are set up and ready.
 

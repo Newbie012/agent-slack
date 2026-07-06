@@ -9,3 +9,6 @@ coverage/
 scripts/testdriver-score.mjs
 .vercel
 .env*
+# `npx skills add` install artifacts (the canonical skill lives in skills/)
+.agents/skills/
+skills-lock.json
