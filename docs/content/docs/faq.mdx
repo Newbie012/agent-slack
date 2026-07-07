@@ -50,9 +50,12 @@ come back as [typed errors](/docs/reference/troubleshooting), not empty output.
 
 ## Can it post or delete messages?
 
-Not through convenience commands. The product is read-first. The generic
-`api call` command blocks known write, destructive, and admin methods unless an
-operator explicitly passes `--allow-write --yes`.
+No. The scopes it requests are read-only, so the token itself cannot post, edit,
+or delete. Slack rejects any write for lack of scope, regardless of the command.
+As a second safeguard, the generic `api call` command also blocks known write,
+destructive, and admin methods unless an operator explicitly passes
+`--allow-write --yes`. (If an operator supplies their own token that has write
+scopes via `--token`, that token's scopes govern.)
 
 ## Where are my tokens stored?
 
