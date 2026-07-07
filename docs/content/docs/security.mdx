@@ -8,9 +8,9 @@ agent-slack follows a zero-trust policy for its login infrastructure. The only
 trusted parties are your local machine and Slack. The hosted OAuth relay is
 treated as untrusted.
 
-## For workspace admins
+## At a glance
 
-agent-slack is a local, read-only Slack reader for AI agents. Approving it means:
+agent-slack is a local, read-only Slack reader for AI agents:
 
 - **Read-only.** Only the scopes you approve, all reads. No posting, editing, deleting, or admin actions.
 - **Local, no backend.** Slack data is read on the operator's machine and not stored by the project. Tokens stay on that machine (macOS Keychain, or a `0600` file elsewhere), and nothing is sent to third parties.
