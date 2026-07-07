@@ -1,5 +1,16 @@
 # @eliya-oss/agent-slack
 
+## 0.1.16
+
+### Patch Changes
+
+- c945387: On macOS, Slack tokens are now always stored in the Keychain (encrypted at rest); plaintext file storage is not allowed. `AGENT_SLACK_TOKEN_STORE=file` is rejected on macOS, so a token is never written to disk in the clear. Only profile metadata is written to disk. Other platforms continue to use a `0600` file.
+
+  No migration: run `agent-slack auth login` once on macOS to store the token in the Keychain, and remove any old `profiles.json` by hand.
+
+- c945387: `agent-slack auth logout` now revokes the token on Slack before removing the local profile, so logging out actually invalidates the credential instead of only forgetting it. Revocation is best-effort: if it fails (offline, or an already-invalid token) the profile is still removed and a warning is returned. Pass `--no-revoke` to skip revocation and only remove the profile locally.
+- edc4900: Support Slack token rotation. When the Slack app rotates tokens, browser (PKCE) logins now store the refresh token and expiry and automatically refresh the access token just before it expires, so sessions survive expiry without re-running `auth login`, and a stranded token lapses on its own. Refresh tokens are stored as secrets (Keychain on macOS, `0600` file elsewhere). Tokens from `--oauth` (confidential client) can't be refreshed automatically (their secret is never stored) and require re-login on expiry; static `--token` credentials are unaffected.
+
 ## 0.1.15
 
 ### Patch Changes

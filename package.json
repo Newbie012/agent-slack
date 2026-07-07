@@ -1,6 +1,6 @@
 {
   "name": "@eliya-oss/agent-slack",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Slack context CLI for AI agents.",
   "repository": {
     "type": "git",
