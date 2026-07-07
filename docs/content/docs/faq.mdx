@@ -57,6 +57,14 @@ destructive, and admin methods unless an operator explicitly passes
 `--allow-write --yes`. (If an operator supplies their own token that has write
 scopes via `--token`, that token's scopes govern.)
 
+## Can it read channels, DMs, or files I don't have access to?
+
+No. The token acts as the authorizing user (or bot), so the CLI can only retrieve
+what that identity can already see in Slack. Slack enforces channel membership,
+granted scopes, and workspace and admin policy on its side, so private channels,
+group DMs, or direct messages you are not part of stay inaccessible. There is no
+token that means "read all of Slack."
+
 ## Where are my tokens stored?
 
 Locally, never on any server. On macOS the token is stored in the **Keychain**
