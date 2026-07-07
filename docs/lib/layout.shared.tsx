@@ -14,5 +14,7 @@ export function baseOptions(): BaseLayoutProps {
     },
     githubUrl: 'https://github.com/Newbie012/agent-slack',
     links: [],
+    // Dark only: hide the light/dark toggle (the theme is pinned in the root layout).
+    themeSwitch: { enabled: false },
   };
 }

@@ -44,7 +44,7 @@ Token setup supports bot-token workflows. OAuth with app credentials is for deve
 - Default local callback is `http://localhost:45454/oauth/slack/callback`.
 - No client secret is embedded in the CLI.
 - Tokens are never printed to stdout or stderr.
-- Local token storage defaults to the macOS Keychain (encrypted at rest) and falls back to a `0600` file on other platforms; `AGENT_SLACK_TOKEN_STORE` overrides either way.
+- On macOS the token is always stored in the Keychain (encrypted at rest); plaintext file storage is disallowed there. Other platforms store it in a `0600` file. `AGENT_SLACK_TOKEN_STORE=file` is rejected on macOS.
 - Logging out revokes the token on Slack by default (best-effort) before removing the local profile, so a logout invalidates the credential rather than only forgetting it; `--no-revoke` opts out.
 - When the Slack app uses token rotation, browser (PKCE) logins auto-refresh their expiring token before use and persist the rotated token, so sessions survive expiry without re-login. Confidential (`--oauth`) tokens cannot be refreshed without the client secret (never stored) and require re-login on expiry.
 - `--json` output remains valid JSON and token-free.

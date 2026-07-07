@@ -14,46 +14,46 @@ of Marketplace distribution and security review.
 
 ## Decision
 
-Default the token store to the OS keychain where it exists and fall back to the
-file store elsewhere:
-
-- macOS (`platform === "darwin"`): default to the Keychain store.
-- Other platforms: default to the `0600` file store (no keychain adapter).
-- An explicit `AGENT_SLACK_TOKEN_STORE` always wins: `keychain` or `file`.
+On macOS, tokens are **always** stored in the Keychain. Plaintext file storage
+is disallowed there: `AGENT_SLACK_TOKEN_STORE=file` on macOS is rejected with a
+usage error rather than honored. On other platforms (no keychain adapter) the
+`0600` file store is the default, with `keychain` honored if explicitly set.
 
 The selection is a pure function, `selectTokenStoreKind(env, platform)`, so the
-default is unit-tested without touching the real keychain.
+policy is unit-tested without touching the real keychain.
 
 ## Rationale
 
-The token is the sensitive artifact; encrypting it at rest via the OS keychain
-beats a cleartext file even at `0600`. macOS is the primary developer platform
-here, and the keychain adapter already exists. Keeping the file store as the
-cross-platform fallback avoids breaking Linux/Windows, and the explicit override
-keeps headless macOS working.
+The token is the sensitive artifact. Storing it in cleartext on a platform that
+offers an OS keychain is bad practice, so on macOS it is not permitted at all,
+not even via an override. Encrypting at rest via the Keychain is the only option
+there. Other platforms have no keychain adapter, so the `0600` file store stays
+their default.
 
 ## Alternatives Considered
 
-- **Keep file as the default, document keychain** - lowest risk, but leaves the
-  secret in cleartext for everyone by default.
-- **Always require keychain** - impossible: the adapter is macOS-only and throws
-  elsewhere; would also break headless macOS.
-- **Detect an interactive session and only then use keychain** - the CLI is
-  agent-first and usually runs with piped (non-TTY) stdout even on a GUI Mac, so
-  TTY detection would wrongly fall back to file for the common agent case.
+- **Keep file as the default** - leaves secrets in cleartext by default. Rejected.
+- **Allow an `=file` override on macOS** (the first version of this decision) -
+  rejected: it leaves a supported way to store plaintext on macOS, which is the
+  practice we want to forbid.
+- **Detect an interactive session** - the CLI is agent-first and usually runs
+  with piped (non-TTY) stdout even on a GUI Mac, so TTY detection is unreliable.
 
 ## Consequences
 
-- On macOS, new logins store the secret in the Keychain; only metadata lands in
-  `~/.config/agent-slack/profiles.keychain.json`.
-- **Headless macOS (SSH, CI) must set `AGENT_SLACK_TOKEN_STORE=file`**: the
-  keychain needs an unlocked login session and can otherwise prompt or fail.
-- No migration: an existing `profiles.json` is not read by the keychain store,
-  so a one-time `agent-slack auth login` re-populates the keychain. Acceptable
-  because there are no external installs yet.
+- On macOS, logins always store the secret in the Keychain; only metadata lands
+  in `~/.config/agent-slack/profiles.keychain.json`. There is no supported way to
+  store the token in cleartext on macOS.
+- Headless macOS (SSH, CI) needs an unlocked login keychain. There is no file
+  fallback, so if the Keychain is unavailable the login fails rather than writing
+  plaintext.
+- No migration: an existing `profiles.json` is not read by the keychain store, so
+  a one-time `agent-slack auth login` repopulates the Keychain. On macOS, remove a
+  stale `profiles.json` by hand, since the CLI no longer uses the file store there.
 
 ## Revisit When
 
-- A cross-platform secret store (libsecret, Windows Credential Manager) is added
-  then the keychain default could extend beyond macOS.
-- Headless macOS becomes a common path and the CI/SSH override is too easy to miss.
+- A cross-platform secret store (libsecret, Windows Credential Manager) is added,
+  then keychain storage could extend beyond macOS.
+- A real headless-macOS use case cannot unlock the keychain and needs another
+  encrypted-at-rest option.

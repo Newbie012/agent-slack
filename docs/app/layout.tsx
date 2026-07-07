@@ -50,17 +50,13 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} dark`}
       suppressHydrationWarning
     >
       <body className="flex flex-col min-h-screen antialiased">
-        <RootProvider
-          theme={{
-            defaultTheme: 'dark',
-            attribute: 'class',
-            enableSystem: true,
-          }}
-        >
+        {/* Dark only: the theme switcher is disabled and the page is pinned to
+            the `dark` class, so there is no light theme to render. */}
+        <RootProvider theme={{ enabled: false }}>
           {children}
         </RootProvider>
         <Analytics />

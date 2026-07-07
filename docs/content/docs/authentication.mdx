@@ -114,21 +114,15 @@ Two non-default cases do not auto-refresh:
 
 ## Where tokens are stored
 
-On **macOS**, the token secret is stored in the **Keychain** by default
-(encrypted at rest); only profile metadata is written to
-`~/.config/agent-slack/profiles.keychain.json`. On **other platforms**, profiles
-are stored in a `0600`-permission file at `~/.config/agent-slack/profiles.json`.
+On **macOS**, the token is **always** stored in the **Keychain** (encrypted at
+rest). Only profile metadata is written to
+`~/.config/agent-slack/profiles.keychain.json`. Plaintext file storage is not
+allowed on macOS: `AGENT_SLACK_TOKEN_STORE=file` is rejected there, so a token is
+never written to disk in the clear. Headless macOS (SSH, CI) needs an unlocked
+login keychain, since there is no file fallback.
 
-Override the store with `AGENT_SLACK_TOKEN_STORE`:
-
-```bash
-# Force the file store, needed on headless macOS (SSH, CI), where the Keychain
-# would prompt or be unavailable.
-AGENT_SLACK_TOKEN_STORE=file agent-slack auth login
-
-# Force the Keychain (macOS only).
-AGENT_SLACK_TOKEN_STORE=keychain agent-slack auth login
-```
+On **other platforms**, the token is stored in a `0600`-permission file at
+`~/.config/agent-slack/profiles.json`.
 
 ## Token type
 
