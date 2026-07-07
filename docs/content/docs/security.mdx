@@ -8,6 +8,49 @@ agent-slack follows a zero-trust policy for its login infrastructure. The only
 trusted parties are your local machine and Slack. The hosted OAuth relay is
 treated as untrusted.
 
+## For workspace admins
+
+Reviewing agent-slack for your workspace? The short version:
+
+- **Read-only.** Every requested scope is a read scope. The app cannot post,
+  edit, delete, or take admin actions. The generic `api call` escape hatch blocks
+  known write and admin methods unless an operator explicitly passes
+  `--allow-write --yes`.
+- **No backend, no data retention.** agent-slack is a local CLI. There is no
+  server that receives or stores your Slack data. Slack content is fetched
+  directly by the operator's machine, used in the moment, and not persisted by
+  the project.
+- **Tokens stay local.** OAuth tokens are stored on the operator's machine (macOS
+  Keychain, or a `0600` file on other platforms), never on project
+  infrastructure. The hosted OAuth relay never receives tokens.
+- **Least privilege and revocable.** Access is bounded by the scopes you approve,
+  the operator's token type, channel membership, and workspace policy. You can
+  revoke it any time from Manage Apps, and `agent-slack auth logout` revokes the
+  token on Slack.
+
+### Scopes requested, and why
+
+All are read scopes:
+
+| Scope | Purpose |
+| --- | --- |
+| `channels:read`, `groups:read`, `im:read`, `mpim:read` | List public channels, private channels, DMs, and group DMs and their metadata so an operator can choose what to read. |
+| `channels:history`, `groups:history`, `im:history`, `mpim:history` | Read message history in conversations the operator can access. |
+| `users:read` | Resolve user IDs to display names so output is human-readable. |
+| `files:read` | List and read metadata for files shared in accessible conversations, and download a file the operator explicitly requests. |
+| `reactions:read`, `pins:read`, `bookmarks:read` | Read reactions, pinned items, and bookmarks as channel context. |
+| `team:read` | Read basic workspace metadata (name, domain, enterprise id). |
+
+The app requests no write, admin, or destructive scopes.
+
+### What leaves the workspace
+
+The project sends nothing to third parties. Slack API calls go directly from the
+operator's machine to Slack. If the operator connects agent-slack to an AI agent,
+the Slack content they read is passed to that agent's model provider, which is
+the operator's own choice and outside this project. See
+[Credential handling and prompt injection](#credential-handling-and-prompt-injection).
+
 ## Trust boundaries
 
 Browser login uses PKCE. Your machine generates a `code_verifier`, sends it only
@@ -60,6 +103,32 @@ Bounds on the damage:
 - Tokens are revocable, and `auth logout` revokes server-side.
 - Already-authenticated users are unaffected; their tokens live locally and
   refresh directly with Slack.
+
+## Credential handling and prompt injection
+
+Slack content is untrusted input. agent-slack treats it as data, never as
+instructions, and its own commands never print the token (`auth status` and every
+command emit scopes, ids, and booleans, not the secret).
+
+The honest limit: once an operator authorizes the app, the token is usable by
+whatever runs as that operator. Storing it in the Keychain encrypts it at rest
+and protects it from other users, other apps, and offline disk theft, but it does
+not sandbox the token from the authorized process itself. So an AI agent that
+follows a prompt injection hidden in Slack content and has arbitrary shell plus
+network egress could read the token and send it out. This is inherent to any
+agentic tool that holds a usable credential, not specific to agent-slack.
+
+What bounds and reduces that risk:
+
+- **Read-only, least-privilege scopes**: a leaked token can only read what the
+  operator can already read. No write, admin, or destructive actions.
+- **The CLI never emits the token**, so an agent limited to agent-slack commands
+  cannot extract it; exfiltration requires going around the CLI.
+- **Token rotation** expires an access token in about 12 hours (revoke to also
+  invalidate the refresh token).
+- **Operator controls** that live outside this project: do not let an agent
+  execute instructions found in Slack content, and run it without arbitrary shell
+  or network egress when handling untrusted content.
 
 ## Hardening
 

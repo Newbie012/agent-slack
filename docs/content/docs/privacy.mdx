@@ -1,28 +1,46 @@
 ---
 title: Privacy
-description: Privacy details for agent-slack and its Slack OAuth relay.
+description: What data agent-slack handles, where it lives, and what the relay does.
 icon: ShieldCheck
 ---
 
-agent-slack is a local CLI. Slack tokens are stored on your machine and are
-never sent to this site.
+agent-slack is a local CLI. It has no backend that receives or stores your Slack
+data. Slack content is fetched directly by the operator's machine and is not
+persisted by the project. See [Security](/docs/security) for the scopes it
+requests and the trust model.
 
-## OAuth relay
+## What data is handled, and where it lives
 
-When you sign in, this site receives Slack's OAuth callback parameters and
-immediately forwards them to the CLI's callback on your machine. It is a
-pass-through step, not a place your data is kept.
+| Data | Where it goes | Where it is stored |
+| --- | --- | --- |
+| Slack tokens | Exchanged directly between your machine and Slack | Your machine only: macOS Keychain, or a `0600` file on other platforms. Never on project infrastructure. |
+| Slack content (messages, users, files) | Read directly from Slack by your machine | Not stored by the project. Returned to your terminal or agent and then discarded. |
+| OAuth `code` and `state` | Pass through the hosted relay to your localhost during login | Not stored. The relay is stateless and sends `cache-control: no-store`. |
 
-## Stored data
+## The OAuth relay
 
-The relay stores no Slack messages, files, tokens, workspace data, or user data.
+During browser login, the relay (`aslk.vercel.app`) receives Slack's OAuth
+callback parameters and immediately forwards them to the CLI's callback on your
+machine. It is a pass-through hop, required because Slack needs an HTTPS redirect.
+It never receives tokens, stores nothing, and holds no secrets. You can remove it
+from the path entirely; see [Security](/docs/security).
 
-## Slack access
+## Retention and third parties
 
-The CLI can read only the Slack data your approved scopes, workspace policy, and
-channel membership allow.
+- The project stores no Slack messages, files, tokens, workspace data, or user
+  data on any server.
+- No data is sold or shared with third parties.
+- If you connect agent-slack to an AI agent, the Slack content you read is passed
+  to that agent's model provider. That is your choice and outside this project.
+
+## Admin controls
+
+- Access is limited to the scopes you approve, plus the operator's token type,
+  channel membership, and workspace policy.
+- Revoke at any time from your workspace's Manage Apps, or have the operator run
+  `agent-slack auth logout`, which revokes the token on Slack.
 
 ## Contact
 
-For questions, open a
+For questions or responsible disclosure, open a
 [GitHub issue](https://github.com/Newbie012/agent-slack/issues).

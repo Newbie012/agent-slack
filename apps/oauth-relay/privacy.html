@@ -23,19 +23,29 @@
   <body>
     <main>
       <h1>Privacy</h1>
-      <p>agent-slack is a local CLI. Slack tokens are stored on your machine and are not sent to this relay.</p>
+      <p>agent-slack is a local command-line tool with no backend. It does not receive or store your Slack data. Slack content is read directly by the operator's machine and is not persisted by the project.</p>
 
-      <h2>OAuth relay</h2>
-      <p>This site receives Slack OAuth callback parameters and immediately forwards them to the local CLI callback on your machine.</p>
+      <h2>Data flow</h2>
+      <ul>
+        <li>Slack tokens are exchanged directly between the operator's machine and Slack, and stored only on that machine (macOS Keychain, or a 0600 file on other platforms). They are never sent to this relay or any project server.</li>
+        <li>Slack content (messages, users, files) is read directly from Slack by the operator's machine and returned to their terminal or agent. The project stores none of it.</li>
+        <li>During login, this relay receives Slack's OAuth <code>code</code> and <code>state</code> and immediately forwards them to the operator's localhost callback. It exists only because Slack requires an HTTPS redirect.</li>
+      </ul>
 
-      <h2>Stored data</h2>
-      <p>The relay does not store Slack messages, files, tokens, workspace data, or user data.</p>
+      <h2>What this relay stores</h2>
+      <p>Nothing. The relay is stateless, holds no secrets, never receives tokens, and sends <code>cache-control: no-store</code>. Login can also bypass the relay entirely using a localhost redirect.</p>
 
       <h2>Slack access</h2>
-      <p>The CLI can access only the Slack data allowed by your approved scopes, workspace policy, and channel membership.</p>
+      <p>The CLI requests read-only scopes and can access only the Slack data allowed by the approved scopes, the operator's token type, channel membership, and workspace policy. It requests no write, admin, or destructive scopes.</p>
 
-      <h2>Contact</h2>
-      <p>For questions, use <a href="https://github.com/Newbie012/agent-slack/issues">GitHub Issues</a>.</p>
+      <h2>Third parties and retention</h2>
+      <p>No Slack data is stored on any server, sold, or shared with third parties. If the operator connects agent-slack to an AI agent, the content they read is passed to that agent's model provider, which is the operator's choice.</p>
+
+      <h2>Revoking access</h2>
+      <p>Workspace admins can revoke the app from Manage Apps at any time. Operators can run <code>agent-slack auth logout</code>, which revokes the token on Slack.</p>
+
+      <h2>More detail and contact</h2>
+      <p>Full security details and the threat model are in the <a href="https://github.com/Newbie012/agent-slack">project documentation</a>. For questions or responsible disclosure, use <a href="https://github.com/Newbie012/agent-slack/issues">GitHub Issues</a>.</p>
     </main>
   </body>
 </html>
