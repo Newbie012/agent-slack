@@ -73,14 +73,14 @@ Run `agent-slack auth logout`, which revokes the token on Slack and removes the
 local profile. Workspace admins can also revoke the app from Manage Apps at any
 time.
 
-## Can a prompt injection in Slack content steal my token?
+## Is it safe to connect this to an AI agent?
 
-The CLI never prints the token, and Slack content is treated as data, not
-instructions. But any agent you authorize can use the token, so a leak is bounded
-rather than impossible: it is read-only, expires under token rotation, and is
-revocable. Don't let an agent act on instructions found in Slack content, and
-limit its shell and network access. See
-[Security](/docs/security#credential-handling-and-prompt-injection).
+Yes, with the usual care for any credential. The CLI is read-only and never
+prints the token, and it treats Slack content as data, not instructions. Since
+any agent you authorize can use the token, don't let the agent act on
+instructions found in Slack content, and limit its shell and network access. Even
+if a token did leak, it is bounded: read-only, expiring under token rotation, and
+revocable. See [Security](/docs/security#credential-handling-and-prompt-injection).
 
 ## I'm a workspace admin. What should I know before approving?
 
