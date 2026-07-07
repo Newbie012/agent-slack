@@ -28,6 +28,12 @@ JSON in and out, real exit codes, and no session state to manage. It runs the
 same from a shell, a script, a CI job, or inside an agent's tool loop, and
 you can pipe it, log it, and diff it like any other command.
 
+It is also cheaper per task. An MCP server keeps its tool definitions resident in
+the model's context, spending tokens before any work happens. The CLI is invoked
+like any command, discovered on demand with `describe --json`, and returns slim,
+compact output (see [token-efficient output](/docs/reference/output-contract)),
+so an agent spends far fewer tokens to get the same Slack context.
+
 ## Does it work in CI or on a headless server?
 
 Yes. Non-TTY stdout defaults to JSON, and you can authenticate without a browser
@@ -50,9 +56,37 @@ operator explicitly passes `--allow-write --yes`.
 
 ## Where are my tokens stored?
 
-In a local profile store outside your project, by default
-`~/.config/agent-slack/profiles.json`. On macOS you can move the secrets into
-Keychain with `AGENT_SLACK_TOKEN_STORE=keychain`.
+Locally, never on any server. On macOS the token is stored in the **Keychain**
+(encrypted at rest); plaintext file storage is not allowed there. On other
+platforms it lives in a `0600`-permission file at
+`~/.config/agent-slack/profiles.json`. See [Security](/docs/security).
+
+## Does my Slack data go to your servers?
+
+No. agent-slack is a local CLI with no backend. It reads Slack directly from your
+machine and stores none of your data. The hosted login relay only forwards the
+OAuth `code` during sign-in and never sees your token. See [Privacy](/docs/privacy).
+
+## How do I revoke access?
+
+Run `agent-slack auth logout`, which revokes the token on Slack and removes the
+local profile. Workspace admins can also revoke the app from Manage Apps at any
+time.
+
+## Can a prompt injection in Slack content steal my token?
+
+The CLI never prints the token, and Slack content is treated as data, not
+instructions. But any agent you authorize can use the token, so a leak is bounded
+rather than impossible: it is read-only, expires under token rotation, and is
+revocable. Don't let an agent act on instructions found in Slack content, and
+limit its shell and network access. See
+[Security](/docs/security#credential-handling-and-prompt-injection).
+
+## I'm a workspace admin. What should I know before approving?
+
+It requests read-only scopes (no write, admin, or destructive access), runs
+locally with no backend, stores nothing on a server, and is revocable at any
+time. See [Security → For workspace admins](/docs/security#for-workspace-admins).
 
 ## Is this affiliated with Slack?
 
