@@ -13,10 +13,6 @@
       "destination": "/support.html"
     },
     {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
       "source": "/oauth/slack/callback",
       "destination": "/api/oauth/slack/callback"
     }

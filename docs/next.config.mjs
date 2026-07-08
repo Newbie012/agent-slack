@@ -21,6 +21,10 @@ const config = {
         source: '/support',
         destination: '/docs/support',
       },
+      {
+        source: '/terms',
+        destination: '/docs/terms',
+      },
     ];
   },
 };
