@@ -1,0 +1,75 @@
+---
+title: Terms
+description: Terms of service for the agent-slack CLI, the hosted OAuth relay, and the Slack app listing.
+icon: Scale
+---
+
+agent-slack is a free, open-source CLI for reading Slack from your terminal. By
+installing the Slack app or using the CLI and its hosted OAuth relay, you agree
+to these terms.
+
+## The service
+
+The service consists of the agent-slack CLI, which runs entirely on your
+machine, and a stateless OAuth relay (`aslk.vercel.app`) that forwards Slack's
+login callback to your localhost. There is no other backend, and the service is
+free of charge.
+
+## License
+
+The software is licensed under the
+[MIT License](https://github.com/Newbie012/agent-slack/blob/main/LICENSE).
+These terms govern the hosted relay and the Slack app listing; they do not
+restrict the rights the MIT License grants you in the code.
+
+## Acceptable use
+
+- Use agent-slack only with workspaces you are authorized to access, and only
+  within the permissions your workspace grants you.
+- Your use of Slack through agent-slack remains subject to Slack's own terms
+  and your workspace's policies. agent-slack cannot and does not extend your
+  Slack access.
+- Do not use the service to collect data you are not permitted to collect, or
+  in violation of applicable law.
+
+## Your responsibilities
+
+Slack tokens are stored only on your machine; keeping that machine secure is
+your responsibility. If you connect agent-slack to an AI agent, the Slack
+content you read is passed to that agent's model provider. That is your choice
+and your responsibility.
+
+## Privacy
+
+The project stores no Slack data on any server. See [Privacy](/docs/privacy).
+
+## Availability and changes
+
+The hosted relay is provided on a best-effort basis and may change or be
+discontinued at any time. Login does not depend on it: the CLI supports a
+localhost redirect that bypasses the relay entirely. These terms may be
+updated; the current version is always at this URL.
+
+## Termination
+
+You can stop using the service at any time. Workspace admins can revoke the
+app from Manage Apps, and operators can run `agent-slack auth logout`, which
+revokes the token on Slack. Abusive use of the hosted relay may be blocked.
+
+## Disclaimer and limitation of liability
+
+The service is provided "as is", without warranty of any kind, express or
+implied, including merchantability, fitness for a particular purpose, and
+non-infringement. To the maximum extent permitted by law, the authors and
+contributors are not liable for any claim, damages, or other liability arising
+from the use of the software or the hosted relay.
+
+## Not affiliated with Slack
+
+agent-slack is an independent open-source project. It is not created by,
+affiliated with, or endorsed by Slack Technologies or Salesforce.
+
+## Contact
+
+For questions about these terms, open a
+[GitHub issue](https://github.com/Newbie012/agent-slack/issues).

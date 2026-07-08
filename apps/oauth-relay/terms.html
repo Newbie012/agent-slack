@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>agent-slack terms of service</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #000;
+        color: #fff;
+        font: 16px/1.6 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+      main { width: min(760px, calc(100vw - 48px)); margin: 72px auto; }
+      h1 { margin: 0 0 20px; font-size: 24px; letter-spacing: 0; }
+      h2 { margin: 28px 0 8px; font-size: 16px; }
+      p, li { color: #cfcfcf; }
+      a { color: #fff; text-underline-offset: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Terms of Service</h1>
+      <p>agent-slack is a free, open-source command-line tool for reading Slack from your terminal. By installing the Slack app or using the CLI and its hosted OAuth relay, you agree to these terms.</p>
+
+      <h2>The service</h2>
+      <p>The service consists of the agent-slack CLI, which runs entirely on your machine, and a stateless OAuth relay that forwards Slack's login callback to your localhost. There is no other backend. The service is provided free of charge.</p>
+
+      <h2>License</h2>
+      <p>The software is licensed under the <a href="https://github.com/Newbie012/agent-slack/blob/main/LICENSE">MIT License</a>. These terms govern your use of the hosted relay and the Slack app listing; they do not restrict the rights the MIT License grants you in the code.</p>
+
+      <h2>Acceptable use</h2>
+      <ul>
+        <li>Use agent-slack only with Slack workspaces you are authorized to access, and only within the permissions your workspace grants you.</li>
+        <li>Your use of Slack through agent-slack remains subject to Slack's own terms and your workspace's policies. agent-slack cannot and does not extend your Slack access.</li>
+        <li>Do not use the service to collect data you are not permitted to collect, or in violation of applicable law.</li>
+      </ul>
+
+      <h2>Your responsibilities</h2>
+      <p>Slack tokens are stored only on your machine; keeping that machine secure is your responsibility. If you connect agent-slack to an AI agent, the Slack content you read is passed to that agent's model provider. That is your choice and your responsibility.</p>
+
+      <h2>Privacy</h2>
+      <p>The project stores no Slack data on any server. See the <a href="/privacy">privacy policy</a> for details.</p>
+
+      <h2>Availability and changes</h2>
+      <p>The hosted relay is provided on a best-effort basis and may change or be discontinued at any time. Login does not depend on it: the CLI supports a localhost redirect that bypasses the relay entirely. These terms may be updated; the current version is always at this URL.</p>
+
+      <h2>Termination</h2>
+      <p>You can stop using the service at any time. Workspace admins can revoke the app from Manage Apps, and operators can run <code>agent-slack auth logout</code>, which revokes the token on Slack. We may block abusive use of the hosted relay.</p>
+
+      <h2>Disclaimer and limitation of liability</h2>
+      <p>The service is provided "as is", without warranty of any kind, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. To the maximum extent permitted by law, the authors and contributors are not liable for any claim, damages, or other liability arising from the use of the software or the hosted relay.</p>
+
+      <h2>Not affiliated with Slack</h2>
+      <p>agent-slack is an independent open-source project. It is not created by, affiliated with, or endorsed by Slack Technologies or Salesforce.</p>
+
+      <h2>Contact</h2>
+      <p>For questions about these terms, open a <a href="https://github.com/Newbie012/agent-slack/issues">GitHub issue</a>.</p>
+    </main>
+  </body>
+</html>
